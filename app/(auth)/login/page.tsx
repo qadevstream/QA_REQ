@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import { ShieldCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +13,12 @@ const initialState: ActionResult | null = null
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(signInAction, initialState)
+
+  useEffect(() => {
+    if (state?.success && state.redirectTo) {
+      window.location.href = state.redirectTo
+    }
+  }, [state])
 
   return (
     <div className="w-full max-w-sm px-4">

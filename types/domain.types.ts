@@ -191,7 +191,7 @@ export interface RequirementFilters {
 }
 
 export type ActionResult<T = void> =
-  | { success: true; data: T; message?: string }
+  | { success: true; data: T; message?: string; redirectTo?: string }
   | { success: false; error: string }
 
 // ─── Actividades (tablero Kanban) ────────────────────────────────────────────

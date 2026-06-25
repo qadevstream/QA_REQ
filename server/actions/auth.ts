@@ -36,11 +36,11 @@ export async function signInAction(
     .eq('id', data.user.id)
     .single()
 
-  if (profile?.role === 'CLIENTE') {
-    redirect('/requirements')
+  return {
+    success: true,
+    data: undefined,
+    redirectTo: profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard',
   }
-
-  redirect('/dashboard')
 }
 
 export async function signOutAction(): Promise<void> {
