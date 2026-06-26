@@ -36,11 +36,9 @@ export async function signInAction(
     .eq('id', data.user.id)
     .single()
 
-  return {
-    success: true,
-    data: undefined,
-    redirectTo: profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard',
-  }
+  // redirect() emite cookies + redirección en la misma respuesta HTTP del servidor,
+  // garantizando que el middleware reciba las cookies de sesión en el siguiente request.
+  redirect(profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard')
 }
 
 export async function signOutAction(): Promise<void> {

@@ -1,35 +1,18 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState } from 'react'
 import { ShieldCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { signInAction } from '@/server/actions/auth'
-import { createClient } from '@/lib/supabase/client'
 import type { ActionResult } from '@/types/domain.types'
 
 const initialState: ActionResult | null = null
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(signInAction, initialState)
-
-  // Si el usuario ya tiene sesión activa, redirigir al dashboard.
-  // Ejecutar solo una vez al montar (no en cada re-render) para evitar loops.
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) window.location.replace('/dashboard')
-    })
-  }, [])
-
-  // Redirigir al completar el login
-  useEffect(() => {
-    if (state?.success && state.redirectTo) {
-      window.location.href = state.redirectTo
-    }
-  }, [state])
 
   return (
     <div className="w-full max-w-sm px-4">
