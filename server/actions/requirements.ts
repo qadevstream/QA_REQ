@@ -261,9 +261,11 @@ export async function updateRequirementAction(
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { firstIteration: _fi, ...dbFields } = fields
   const { error } = await supabase
     .from('requirements')
-    .update({ ...fields, updated_at: new Date().toISOString() })
+    .update({ ...dbFields, updated_at: new Date().toISOString() })
     .eq('id', id)
 
   if (error) return { success: false, error: error.message }
@@ -470,7 +472,8 @@ export async function bulkImportRequirementsAction(
     }))
     const { data: iterInserted, error } = await supabase
       .from('requirement_iterations')
-      .insert(iterRows)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .insert(iterRows as any)
       .select('id, requirement_id')
     if (error) throw new Error(error.message)
 
@@ -546,7 +549,8 @@ export async function syncPlannerAction(): Promise<ActionResult<{ sincronizados:
     const supabase = await createClient()
 
     // Traer todas las iteraciones con datos del req padre
-    const { data: iterations, error: iterErr } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: iterations, error: iterErr } = await (supabase as any)
       .from('requirement_iterations')
       .select(`
         id,
@@ -566,14 +570,15 @@ export async function syncPlannerAction(): Promise<ActionResult<{ sincronizados:
     const linkedIds = new Set((linked ?? []).map((a) => a.iteration_id as string))
 
     // Filtrar iteraciones sin actividad
-    const sinActividad = (iterations ?? []).filter((it) => !linkedIds.has(it.id))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const sinActividad = (iterations ?? [] as any[]).filter((it: any) => !linkedIds.has(it.id))
 
     if (sinActividad.length === 0) {
       return { success: true, data: { sincronizados: 0 }, message: 'El planner ya está sincronizado.' }
     }
 
     await Promise.all(
-      sinActividad.map((it) => {
+      sinActividad.map((it: any) => {
         const req = Array.isArray(it.requirements) ? it.requirements[0] : it.requirements as any
         return createActividad({
           tck: req.codigo_requerimiento,

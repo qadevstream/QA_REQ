@@ -38,7 +38,8 @@ export async function signInAction(
 
   // redirect() emite cookies + redirección en la misma respuesta HTTP del servidor,
   // garantizando que el middleware reciba las cookies de sesión en el siguiente request.
-  redirect(profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard')
+  const role = (profile as { role?: string } | null)?.role
+  redirect(role === 'CLIENTE' ? '/requirements' : '/dashboard')
 }
 
 export async function signOutAction(): Promise<void> {

@@ -18,7 +18,8 @@ import type { ActionResult, RegistroDiario, CreateRegistroDiarioInput } from '@/
 async function syncHorasReales(nro_ticket: string) {
   const { createClient } = await import('@/lib/supabase/server')
   const supabase = await createClient()
-  await supabase.rpc('sync_horas_reales', { p_nro_ticket: nro_ticket })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase.rpc as any)('sync_horas_reales', { p_nro_ticket: nro_ticket })
 }
 
 export async function getRegistroDiarioAction(filters: {
@@ -172,7 +173,7 @@ export async function deleteRegistroDiarioAction(id: string): Promise<ActionResu
       .from('registro_diario')
       .select('nro_ticket')
       .eq('id', id)
-      .single()
+      .single() as { data: { nro_ticket?: string | null } | null }
 
     await deleteRegistroDiario(id)
 

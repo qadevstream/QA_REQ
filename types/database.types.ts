@@ -40,6 +40,7 @@ export type Database = {
           is_active?: boolean
           updated_at?: string
         }
+        Relationships: []
       }
       requirements: {
         Row: {
@@ -77,6 +78,7 @@ export type Database = {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['requirements']['Insert']>
+        Relationships: []
       }
       requirement_iterations: {
         Row: {
@@ -140,6 +142,7 @@ export type Database = {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['requirement_iterations']['Insert']>
+        Relationships: []
       }
       requirement_history: {
         Row: {
@@ -160,7 +163,8 @@ export type Database = {
           valor_nuevo?: string | null
           created_at?: string
         }
-        Update: never
+        Update: Record<string, never>
+        Relationships: []
       }
       actividades: {
         Row: {
@@ -204,6 +208,7 @@ export type Database = {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['actividades']['Insert']>
+        Relationships: []
       }
       registro_diario: {
         Row: {
@@ -243,6 +248,79 @@ export type Database = {
           updated_at?: string
         }
         Update: Partial<Database['public']['Tables']['registro_diario']['Insert']>
+        Relationships: []
+      }
+      aplicativos_catalogo: {
+        Row: {
+          codigo: string
+          nombre: string
+          color: string
+          activo: boolean
+          orden: number
+          ati_responsable: string | null
+          correo: string | null
+          aplicativo_grupo: string | null
+        }
+        Insert: {
+          codigo: string
+          nombre: string
+          color?: string
+          activo?: boolean
+          orden?: number
+          ati_responsable?: string | null
+          correo?: string | null
+          aplicativo_grupo?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['aplicativos_catalogo']['Insert']>
+        Relationships: []
+      }
+      cat_aplicativo: {
+        Row: {
+          aplicativo: string
+          activo: boolean
+          orden: number
+        }
+        Insert: {
+          aplicativo: string
+          activo?: boolean
+          orden?: number
+        }
+        Update: Partial<Database['public']['Tables']['cat_aplicativo']['Insert']>
+        Relationships: []
+      }
+      cat_tipo_tarea: {
+        Row: {
+          tipo_tarea: string
+          activo: boolean
+          orden: number
+        }
+        Insert: {
+          tipo_tarea: string
+          activo?: boolean
+          orden?: number
+        }
+        Update: Partial<Database['public']['Tables']['cat_tipo_tarea']['Insert']>
+        Relationships: []
+      }
+      actividad_estado_historial: {
+        Row: {
+          id: string
+          actividad_id: string
+          estado_anterior: ActividadEstadoEnum | null
+          estado_nuevo: ActividadEstadoEnum
+          changed_by: string | null
+          changed_at: string
+        }
+        Insert: {
+          id?: string
+          actividad_id: string
+          estado_anterior?: ActividadEstadoEnum | null
+          estado_nuevo: ActividadEstadoEnum
+          changed_by?: string | null
+          changed_at?: string
+        }
+        Update: Partial<Database['public']['Tables']['actividad_estado_historial']['Insert']>
+        Relationships: []
       }
     }
     Views: Record<string, never>
