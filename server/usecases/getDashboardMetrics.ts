@@ -5,7 +5,8 @@ import { isVencido } from '@/lib/utils'
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const supabase = await createClient()
 
-  const { data: all, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: all, error } = await (supabase as any)
     .from('requirement_iterations')
     .select(`
       id, estado_qa, fecha_entrega_planificada,
@@ -17,7 +18,7 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
 
   if (error) throw new Error(error.message)
 
-  const iterations = (all ?? []).map((r) => {
+  const iterations = (all ?? [] as any[]).map((r: any) => {
     const req = Array.isArray(r.requirement) ? r.requirement[0] : r.requirement
     return {
       estado_qa: r.estado_qa as string,
@@ -29,19 +30,25 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     }
   })
 
-  const total_completados = iterations.filter((r) => r.estado_qa === 'TERMINADO').length
-  const total_bloqueados  = iterations.filter((r) => r.estado_qa === 'OBSERVADO_BLOQUEADO').length
-  const total_vencidos    = iterations.filter((r) => isVencido(r.fecha_entrega_planificada, r.estado_qa)).length
-  const total_activos     = iterations.filter((r) => r.estado_qa !== 'TERMINADO' && r.estado_qa !== 'CANCELADO').length
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const total_completados = iterations.filter((r: any) => r.estado_qa === 'TERMINADO').length
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const total_bloqueados  = iterations.filter((r: any) => r.estado_qa === 'OBSERVADO_BLOQUEADO').length
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const total_vencidos    = iterations.filter((r: any) => isVencido(r.fecha_entrega_planificada, r.estado_qa)).length
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const total_activos     = iterations.filter((r: any) => r.estado_qa !== 'TERMINADO' && r.estado_qa !== 'CANCELADO').length
 
   const estadoMap = new Map<string, number>()
-  iterations.forEach((r) => estadoMap.set(r.estado_qa, (estadoMap.get(r.estado_qa) ?? 0) + 1))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  iterations.forEach((r: any) => estadoMap.set(r.estado_qa, (estadoMap.get(r.estado_qa) ?? 0) + 1))
   const by_estado = Array.from(estadoMap.entries()).map(([estado, count]) => ({
     estado: estado as DashboardMetrics['by_estado'][0]['estado'], count,
   }))
 
   const qaMap = new Map<string, number>()
-  iterations.forEach((r) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  iterations.forEach((r: any) => {
     const name = (r.responsable_qa as any)?.full_name ?? 'Sin asignar'
     qaMap.set(name, (qaMap.get(name) ?? 0) + 1)
   })
@@ -50,7 +57,8 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     .sort((a, b) => b.count - a.count)
 
   const appMap = new Map<string, number>()
-  iterations.forEach((r) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  iterations.forEach((r: any) => {
     if (r.aplicativo) appMap.set(r.aplicativo, (appMap.get(r.aplicativo) ?? 0) + 1)
   })
   const by_aplicativo = Array.from(appMap.entries()).map(([aplicativo, count]) => ({

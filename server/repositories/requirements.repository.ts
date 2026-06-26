@@ -131,7 +131,8 @@ export async function createRequirementIteration(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('requirement_iterations')
-    .insert({ ...input, created_by })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .insert({ ...input, created_by } as any)
     .select()
     .single()
   if (error) throw new Error(error.message)
@@ -145,7 +146,8 @@ export async function updateRequirementIteration(
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('requirement_iterations')
-    .update({ ...fields, updated_at: new Date().toISOString() })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ ...fields, updated_at: new Date().toISOString() } as any)
     .eq('id', id)
     .select()
     .single()
@@ -175,7 +177,8 @@ export async function findExistingCodeIters(
   const supabase = await createClient()
 
   const codes = [...new Set(pairs.map((p) => p.codigo))]
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('requirements')
     .select('id, codigo_requerimiento, requirement_iterations(iteracion)')
     .in('codigo_requerimiento', codes)
@@ -243,7 +246,8 @@ export async function bulkCreateRequirements(
     }))
 
     if (iterRows.length > 0) {
-      const { error: iterError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: iterError } = await (supabase as any)
         .from('requirement_iterations')
         .insert(iterRows)
       if (iterError) throw new Error(iterError.message)

@@ -43,7 +43,8 @@ export async function getResumenGestion(year?: number, month?: number) {
   const { inicio, fin } = calcPeriodo(y, m)
 
   // Filtramos por fecha_asignacion dentro del período (si existe), sino por created_at
-  let query = supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
     .from('requirement_iterations')
     .select(`
       estado_qa, fecha_asignacion, created_at,
