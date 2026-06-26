@@ -36,10 +36,16 @@ export async function signInAction(
     .eq('id', data.user.id)
     .single()
 
-  // redirect() emite cookies + redirección en la misma respuesta HTTP del servidor,
-  // garantizando que el middleware reciba las cookies de sesión en el siguiente request.
   const role = (profile as { role?: string } | null)?.role
-  redirect(role === 'CLIENTE' ? '/requirements' : '/dashboard')
+  // Devolver redirectTo en lugar de llamar redirect(): useActionState usa soft-navigation
+  // que NO procesa Set-Cookie, impidiendo que el middleware reciba la sesión.
+  // El cliente hace window.location.href (hard navigation) para que las cookies sean
+  // procesadas por el browser antes del siguiente request al middleware.
+  return {
+    success: true,
+    data: undefined,
+    redirectTo: role === 'CLIENTE' ? '/requirements' : '/dashboard',
+  }
 }
 
 export async function signOutAction(): Promise<void> {
