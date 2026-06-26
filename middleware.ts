@@ -31,10 +31,14 @@ export async function middleware(request: NextRequest) {
   // Toda redirección debe llevar las cookies (posiblemente refrescadas)
   // que Supabase escribió en supabaseResponse — si no, el navegador se
   // queda con el refresh token viejo ya rotado y la sesión se rompe.
+  // IMPORTANTE: pasar el objeto cookie completo (no solo name+value) para
+  // preservar secure, httpOnly, sameSite y maxAge en producción HTTPS.
   function redirectTo(path: string) {
-    const redirectResponse = NextResponse.redirect(new URL(path, request.url))
+    const url = request.nextUrl.clone()
+    url.pathname = path
+    const redirectResponse = NextResponse.redirect(url)
     supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie.name, cookie.value)
+      redirectResponse.cookies.set(cookie)
     })
     return redirectResponse
   }
