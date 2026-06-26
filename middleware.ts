@@ -24,48 +24,34 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // IMPORTANTE: no ejecutar nada entre createServerClient y getUser().
+  // getUser() refresca el token si expiró y actualiza supabaseResponse con las
+  // nuevas cookies — devolver supabaseResponse al final es obligatorio para que
+  // el navegador reciba los tokens renovados.
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Toda redirección debe llevar las cookies (posiblemente refrescadas)
-  // que Supabase escribió en supabaseResponse — si no, el navegador se
-  // queda con el refresh token viejo ya rotado y la sesión se rompe.
-  // IMPORTANTE: pasar el objeto cookie completo (no solo name+value) para
-  // preservar secure, httpOnly, sameSite y maxAge en producción HTTPS.
-  function redirectTo(path: string) {
-    const url = request.nextUrl.clone()
-    url.pathname = path
-    const redirectResponse = NextResponse.redirect(url)
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie)
-    })
-    return redirectResponse
-  }
-
-  // Ruta de login
+  // /login siempre carga sin redirección desde el middleware.
+  // La propia página detecta si ya hay sesión activa y redirige al dashboard.
+  // Esto elimina el loop login ↔ dashboard que ocurre cuando las cookies del
+  // redirect no se propagan correctamente en producción.
   if (pathname.startsWith('/login')) {
-    if (user) {
-      // CLIENTE va directo a Requerimientos
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      return redirectTo(profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard')
-    }
     return supabaseResponse
   }
 
-  // Proteger todas las demás rutas
+  // Proteger todas las rutas privadas
   if (!user) {
-    return redirectTo('/login')
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    return NextResponse.redirect(url)
   }
 
   // Redirect raíz → dashboard
   if (pathname === '/') {
-    return redirectTo('/dashboard')
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
   }
 
   // CLIENTE solo puede acceder a /requirements
@@ -77,7 +63,9 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (profile?.role === 'CLIENTE') {
-      return redirectTo('/requirements')
+      const url = request.nextUrl.clone()
+      url.pathname = '/requirements'
+      return NextResponse.redirect(url)
     }
   }
 
