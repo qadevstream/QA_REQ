@@ -1,5 +1,4 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -9,35 +8,45 @@ export async function POST(request: NextRequest) {
   const password = formData.get('password') as string
 
   if (!email || !password) {
-    return NextResponse.redirect(new URL('/login?error=Completa+todos+los+campos', request.url))
+    return NextResponse.redirect(
+      new URL('/login?error=Completa+todos+los+campos', request.url),
+      { status: 303 },
+    )
   }
 
-  const cookieStore = await cookies()
+  // Collect cookies Supabase wants to set, then apply them to the final response
+  const pendingCookies: Array<{
+    name: string
+    value: string
+    options: Record<string, unknown>
+  }> = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll() { return cookieStore.getAll() },
+        getAll() {
+          return request.cookies.getAll()
+        },
         setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {}
+          cookiesToSet.forEach(c => pendingCookies.push(c))
         },
       },
-    }
+    },
   )
 
   const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    const msg = error.message === 'Invalid login credentials'
-      ? 'Credenciales+incorrectas'
-      : encodeURIComponent(error.message)
-    return NextResponse.redirect(new URL(`/login?error=${msg}`, request.url))
+    const msg =
+      error.message === 'Invalid login credentials'
+        ? 'Credenciales+incorrectas'
+        : encodeURIComponent(error.message)
+    return NextResponse.redirect(
+      new URL(`/login?error=${msg}`, request.url),
+      { status: 303 },
+    )
   }
 
   const { data: profile } = await supabase
@@ -46,14 +55,14 @@ export async function POST(request: NextRequest) {
     .eq('id', data.user.id)
     .single()
 
-  const redirectTo = profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard'
+  const destination = profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard'
 
-  const response = NextResponse.redirect(new URL(redirectTo, request.url))
+  // 303 See Other → browser follows with GET, preserving Set-Cookie from this response
+  const response = NextResponse.redirect(new URL(destination, request.url), { status: 303 })
 
-  // Copiar las cookies de sesión a la respuesta final
-  cookieStore.getAll().forEach(({ name, value }) => {
-    const existing = response.cookies.get(name)
-    if (!existing) response.cookies.set(name, value)
+  pendingCookies.forEach(({ name, value, options }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    response.cookies.set(name, value, options as any)
   })
 
   return response
