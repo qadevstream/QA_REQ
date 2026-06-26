@@ -1,25 +1,47 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { ShieldCheck, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { signInAction } from '@/server/actions/auth'
-import type { ActionResult } from '@/types/domain.types'
-
-const initialState: ActionResult | null = null
 
 export default function LoginPage() {
-  const [state, formAction, isPending] = useActionState(signInAction, initialState)
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, setIsPending] = useState(false)
 
-  useEffect(() => {
-    if (state?.success && state.redirectTo) {
-      // Hard navigation para que el browser procese Set-Cookie antes del request al middleware
-      window.location.href = state.redirectTo
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setIsPending(true)
+    setError(null)
+
+    const form = e.currentTarget
+    const email    = (form.elements.namedItem('email')    as HTMLInputElement).value
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setError(
+        authError.message === 'Invalid login credentials'
+          ? 'Credenciales incorrectas. Verifica tu email y contraseña.'
+          : authError.message
+      )
+      setIsPending(false)
+      return
     }
-  }, [state])
+
+    // createBrowserClient almacena la sesión en cookies que el middleware puede leer.
+    // window.location.href hace hard-navigation para que el browser envíe esas cookies.
+    window.location.href = '/dashboard'
+  }
 
   return (
     <div className="w-full max-w-sm px-4">
@@ -39,7 +61,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-slate-300">
                 Correo electrónico
@@ -70,9 +92,9 @@ export default function LoginPage() {
               />
             </div>
 
-            {state && !state.success && (
+            {error && (
               <div className="rounded-md bg-red-900/40 border border-red-700/50 px-3 py-2 text-sm text-red-300">
-                {state.error}
+                {error}
               </div>
             )}
 
