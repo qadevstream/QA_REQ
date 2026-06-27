@@ -57,8 +57,9 @@ export async function POST(request: NextRequest) {
 
   const destination = profile?.role === 'CLIENTE' ? '/requirements' : '/dashboard'
 
-  // 303 See Other → browser follows with GET, preserving Set-Cookie from this response
   const response = NextResponse.redirect(new URL(destination, request.url), { status: 303 })
+  // Prevent Vercel CDN from caching this response and stripping Set-Cookie headers
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
 
   pendingCookies.forEach(({ name, value, options }) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

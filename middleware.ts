@@ -24,13 +24,14 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: no ejecutar nada entre createServerClient y getUser().
-  // getUser() refresca el token si expiró y actualiza supabaseResponse con las
-  // nuevas cookies — devolver supabaseResponse al final es obligatorio para que
-  // el navegador reciba los tokens renovados.
+  // getSession() lee el JWT desde la cookie localmente (sin red).
+  // getUser() hace una petición a Supabase desde Edge Runtime que puede fallar
+  // en Vercel y devolver user=null aunque la sesión sea válida, causando un
+  // loop login→dashboard→login. La validación segura ocurre en Server Components.
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   // /login siempre carga sin redirección desde el middleware.
   // La propia página detecta si ya hay sesión activa y redirige al dashboard.
