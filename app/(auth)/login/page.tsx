@@ -1,17 +1,43 @@
 'use client'
 
-import { useSearchParams } from 'next/navigation'
-import { Suspense } from 'react'
+import { useState } from 'react'
 import { ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { loginAction } from './actions'
+import { createClient } from '@/lib/supabase/client'
 
-function LoginForm() {
-  const searchParams = useSearchParams()
-  const error = searchParams.get('error')
+export default function LoginPage() {
+  const [error, setError]     = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const form     = e.currentTarget
+    const email    = (form.elements.namedItem('email')    as HTMLInputElement).value
+    const password = (form.elements.namedItem('password') as HTMLInputElement).value
+
+    const supabase = createClient()
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (authError) {
+      setError(
+        authError.message === 'Invalid login credentials'
+          ? 'Credenciales incorrectas'
+          : authError.message,
+      )
+      setLoading(false)
+      return
+    }
+
+    // Hard navigation: forces a fresh HTTP request so middleware reads the
+    // newly set auth cookies via getSession() without a network call to Supabase.
+    window.location.href = '/dashboard'
+  }
 
   return (
     <div className="w-full max-w-sm px-4">
@@ -31,7 +57,7 @@ function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={loginAction} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-slate-300">
                 Correo electrónico
@@ -64,12 +90,12 @@ function LoginForm() {
 
             {error && (
               <div className="rounded-md bg-red-900/40 border border-red-700/50 px-3 py-2 text-sm text-red-300">
-                {decodeURIComponent(error)}
+                {error}
               </div>
             )}
 
-            <Button type="submit" className="w-full">
-              Ingresar
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Ingresando...' : 'Ingresar'}
             </Button>
           </form>
         </CardContent>
@@ -79,13 +105,5 @@ function LoginForm() {
         v1.0 · Área de Calidad de Software
       </p>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   )
 }
