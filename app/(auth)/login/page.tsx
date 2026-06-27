@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { loginAction } from './actions'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -30,7 +31,7 @@ function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action="/api/auth/login" method="POST" className="space-y-4">
+          <form action={loginAction} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="email" className="text-slate-300">
                 Correo electrónico
