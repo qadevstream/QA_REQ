@@ -1,7 +1,7 @@
 import type { Profile, UserRole } from '@/types/domain.types'
 
 export function isSupervisor(profile: Profile | null): boolean {
-  return profile?.role === 'SUPERVISOR'
+  return profile?.role === 'SUPERVISOR' || profile?.role === 'ADMINISTRADOR'
 }
 
 export function isAnalistaQA(profile: Profile | null): boolean {

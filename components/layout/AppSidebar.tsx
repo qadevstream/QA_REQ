@@ -33,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
 ]
 
 const ROLE_LABELS: Record<string, string> = {
+  ADMINISTRADOR: 'Administrador',
   SUPERVISOR: 'Supervisor QA',
   ANALISTA_QA: 'Analista QA',
   CLIENTE: 'Cliente',
@@ -45,7 +46,7 @@ interface AppSidebarProps {
 export function AppSidebar({ profile }: AppSidebarProps) {
   const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
-  const isSupervisor = profile.role === 'SUPERVISOR'
+  const isSupervisor = profile.role === 'SUPERVISOR' || profile.role === 'ADMINISTRADOR'
   const isCliente = profile.role === 'CLIENTE'
 
   const visibleItems = NAV_ITEMS.filter((item) => {

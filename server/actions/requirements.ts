@@ -353,7 +353,7 @@ export async function bulkImportRequirementsAction(
 ): Promise<ActionResult<{ creados: number; duplicados: number; omitidos: OmittedRow[] }>> {
   const session = await getCurrentUser()
   if (!session) return { success: false, error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR') {
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') {
     return { success: false, error: 'Solo un Supervisor puede importar requerimientos masivamente.' }
   }
 

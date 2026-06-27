@@ -86,7 +86,7 @@ export async function bulkImportRegistroDiarioAction(
 ): Promise<ActionResult<{ creados: number; omitidos: number }>> {
   const session = await getCurrentUser()
   if (!session) return { success: false, error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR') {
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') {
     return { success: false, error: 'Solo un Supervisor puede importar registros masivamente.' }
   }
   if (!qaId) return { success: false, error: 'Selecciona el analista destino.' }

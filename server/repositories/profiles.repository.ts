@@ -37,7 +37,7 @@ export async function findAnalistas(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
-    .in('role', ['SUPERVISOR', 'ANALISTA_QA'])
+    .in('role', ['ADMINISTRADOR', 'SUPERVISOR', 'ANALISTA_QA'])
     .eq('is_active', true)
     .order('full_name')
 

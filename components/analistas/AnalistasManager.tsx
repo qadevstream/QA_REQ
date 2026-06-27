@@ -4,9 +4,9 @@ import { useActionState, useEffect, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
   UserPlus, Trash2, Mail, IdCard, User,
-  CheckCircle2, AlertCircle, Briefcase, Shield, ChevronDown,
+  CheckCircle2, AlertCircle, Briefcase, Shield, ChevronDown, KeyRound,
 } from 'lucide-react'
-import { createAnalistaAction, deleteAnalistaAction } from '@/server/actions/analistas'
+import { createAnalistaAction, deleteAnalistaAction, sendPasswordResetAction } from '@/server/actions/analistas'
 import type { AnalistaConCorreo } from '@/server/actions/analistas'
 import { CARGO_LABELS } from '@/lib/constants'
 import type { ActionResult } from '@/types/domain.types'
@@ -99,6 +99,8 @@ export function AnalistasManager({ initialAnalistas }: AnalistasManagerProps) {
   const [form, setForm] = useState<FormState>(EMPTY)
   const [errors, setErrors] = useState<Errors>({})
   const [isDeleting, startDelete] = useTransition()
+  const [isResetting, startReset] = useTransition()
+  const [resettingId, setResettingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!state) return
@@ -132,6 +134,19 @@ export function AnalistasManager({ initialAnalistas }: AnalistasManagerProps) {
       if (result.success) {
         setAnalistas((prev) => prev.filter((a) => a.id !== id))
         toast.success(`Analista ${nombre} eliminado del sistema.`)
+      } else {
+        toast.error(result.error)
+      }
+    })
+  }
+
+  function handleReset(correo: string, id: string) {
+    setResettingId(id)
+    startReset(async () => {
+      const result = await sendPasswordResetAction(correo)
+      setResettingId(null)
+      if (result.success) {
+        toast.success(`Enlace de restablecimiento enviado a ${correo}.`)
       } else {
         toast.error(result.error)
       }
@@ -304,7 +319,15 @@ export function AnalistasManager({ initialAnalistas }: AnalistasManagerProps) {
                       </span>
                     </div>
 
-                    <div className="col-span-1 flex justify-end">
+                    <div className="col-span-1 flex justify-end gap-1">
+                      <button
+                        onClick={() => handleReset(a.correo, a.id)}
+                        disabled={isResetting || a.correo === '—'}
+                        className="opacity-0 group-hover:opacity-100 flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-all disabled:opacity-50"
+                        title="Enviar enlace de restablecimiento de contraseña"
+                      >
+                        <KeyRound className={`h-4 w-4 ${isResetting && resettingId === a.id ? 'animate-pulse' : ''}`} />
+                      </button>
                       <button
                         onClick={() => handleEliminar(a.id, a.full_name)}
                         disabled={isDeleting}

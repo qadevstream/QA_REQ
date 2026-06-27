@@ -22,7 +22,7 @@ import type { ActionResult, AplicativoCatalogo, CatAplicativo, CatTipoTarea } fr
 async function requireSupervisor() {
   const session = await getCurrentUser()
   if (!session) return { error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR') return { error: 'Solo un Supervisor puede modificar el catálogo.' }
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') return { error: 'Solo un Supervisor puede modificar el catálogo.' }
   return { session }
 }
 

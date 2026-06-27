@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentUser } from '@/server/actions/auth'
 import { findAllProfiles } from '@/server/repositories/profiles.repository'
@@ -18,7 +19,7 @@ export async function createAnalistaAction(
 ): Promise<ActionResult<AnalistaConCorreo>> {
   const session = await getCurrentUser()
   if (!session) return { success: false, error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR') {
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') {
     return { success: false, error: 'Solo un Supervisor puede crear usuarios.' }
   }
 
@@ -48,7 +49,12 @@ export async function createAnalistaAction(
       full_name: input.nombre,
       cargo: input.cargo,
       dni: input.dni,
-      role: input.cargo === 'SUPERVISOR_QA' ? 'SUPERVISOR' : 'ANALISTA_QA',
+      role:
+        input.cargo === 'ADMINISTRADOR'
+          ? 'ADMINISTRADOR'
+          : input.cargo === 'SUPERVISOR_QA'
+            ? 'SUPERVISOR'
+            : 'ANALISTA_QA',
     },
   })
 
@@ -106,7 +112,7 @@ export async function findAnalistasConCorreo(): Promise<AnalistaConCorreo[]> {
 export async function deleteAnalistaAction(id: string): Promise<ActionResult> {
   const session = await getCurrentUser()
   if (!session) return { success: false, error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR') {
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') {
     return { success: false, error: 'Solo un Supervisor puede eliminar usuarios.' }
   }
   if (id === session.userId) {
@@ -118,5 +124,31 @@ export async function deleteAnalistaAction(id: string): Promise<ActionResult> {
   if (error) return { success: false, error: error.message }
 
   revalidatePath('/analistas')
+  return { success: true, data: undefined }
+}
+
+// Envía al usuario un correo con enlace para restablecer su contraseña.
+// Usa un cliente con flujo implícito (sin PKCE) para que el enlace funcione
+// en el navegador del destinatario, no solo en el que lo solicitó.
+export async function sendPasswordResetAction(correo: string): Promise<ActionResult> {
+  const session = await getCurrentUser()
+  if (!session) return { success: false, error: 'No autenticado.' }
+  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') {
+    return { success: false, error: 'Solo un Supervisor o Administrador puede enviar restablecimientos.' }
+  }
+  if (!correo || correo === '—') return { success: false, error: 'El usuario no tiene un correo válido.' }
+
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { flowType: 'implicit', persistSession: false, autoRefreshToken: false } },
+  )
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const { error } = await supabase.auth.resetPasswordForEmail(correo, {
+    redirectTo: `${appUrl}/reset-password`,
+  })
+
+  if (error) return { success: false, error: error.message }
   return { success: true, data: undefined }
 }
