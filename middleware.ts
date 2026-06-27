@@ -1,76 +1,42 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+// Derive cookie name from the Supabase project URL.
+// createBrowserClient (and createServerClient) both use this naming convention.
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
+const PROJECT_REF  = SUPABASE_URL.split('//')[1]?.split('.')[0] ?? ''
+const AUTH_COOKIE  = `sb-${PROJECT_REF}-auth-token`
+
+function isAuthenticated(request: NextRequest): boolean {
+  // @supabase/ssr stores the session in AUTH_COOKIE or chunked as AUTH_COOKIE.0
+  return (
+    !!request.cookies.get(AUTH_COOKIE)?.value ||
+    !!request.cookies.get(`${AUTH_COOKIE}.0`)?.value
+  )
+}
+
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // getSession() lee el JWT desde la cookie localmente (sin red).
-  // getUser() hace una petición a Supabase desde Edge Runtime que puede fallar
-  // en Vercel y devolver user=null aunque la sesión sea válida, causando un
-  // loop login→dashboard→login. La validación segura ocurre en Server Components.
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const user = session?.user ?? null
-
-  // /login siempre carga sin redirección desde el middleware.
-  // La propia página detecta si ya hay sesión activa y redirige al dashboard.
-  // Esto elimina el loop login ↔ dashboard que ocurre cuando las cookies del
-  // redirect no se propagan correctamente en producción.
+  // Login is always accessible
   if (pathname.startsWith('/login')) {
-    return supabaseResponse
+    return NextResponse.next()
   }
 
-  // Proteger todas las rutas privadas
-  if (!user) {
+  // No auth cookie → redirect to login
+  if (!isAuthenticated(request)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // Redirect raíz → dashboard
+  // Root → dashboard
   if (pathname === '/') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
   }
 
-  // CLIENTE solo puede acceder a /requirements
-  if (!pathname.startsWith('/requirements')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profile?.role === 'CLIENTE') {
-      const url = request.nextUrl.clone()
-      url.pathname = '/requirements'
-      return NextResponse.redirect(url)
-    }
-  }
-
-  return supabaseResponse
+  return NextResponse.next()
 }
 
 export const config = {
