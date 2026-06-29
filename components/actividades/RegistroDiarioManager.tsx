@@ -124,6 +124,12 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     setForm((prev) => ({ ...prev, periodo: e.target.value }))
   }
 
+  // Al elegir la aplicación, autocompletar el CÓDIGO APP con su código.
+  function handleAplicativoChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const codigo = e.target.value
+    setForm((prev) => ({ ...prev, aplicativo: codigo, codigo_app: codigo }))
+  }
+
   function handleAdd() {
     if (!form.periodo.trim()) { toast.error('El período es obligatorio.'); return }
     if (!form.horas_ejecutadas || Number(form.horas_ejecutadas) <= 0) {
@@ -206,6 +212,12 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setEditForm((prev) => ({ ...prev, [field]: e.target.value }))
 
+  // Al elegir la aplicación en edición, autocompletar también el CÓDIGO APP.
+  function handleEditAplicativoChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const codigo = e.target.value
+    setEditForm((prev) => ({ ...prev, aplicativo: codigo, codigo_app: codigo }))
+  }
+
   function confirmDelete() {
     if (!pendingDeleteId) return
     const id = pendingDeleteId
@@ -266,7 +278,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                 {PERIODOS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
               </Select>
               <Input type="number" min={1} max={6} value={form.iteracion} onChange={setField('iteracion')} className="text-center" placeholder="—" />
-              <Select value={form.aplicativo} onChange={setField('aplicativo')}>
+              <Select value={form.aplicativo} onChange={handleAplicativoChange}>
                 <option value="">—</option>
                 {aplicativosOrdenados.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
               </Select>
@@ -407,7 +419,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
             </div>
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Aplicación</p>
-              <Select value={editForm.aplicativo} onChange={setEditField('aplicativo')}>
+              <Select value={editForm.aplicativo} onChange={handleEditAplicativoChange}>
                 <option value="">—</option>
                 {aplicativosOrdenados.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
               </Select>
