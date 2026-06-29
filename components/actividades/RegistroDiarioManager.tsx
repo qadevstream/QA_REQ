@@ -61,6 +61,10 @@ interface RegistroDiarioManagerProps {
 
 export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos, tiposTarea, currentUserId, isSupervisor }: RegistroDiarioManagerProps) {
   const router = useRouter()
+  // Aplicativos ordenados alfabéticamente (A-Z) por nombre para los dropdowns
+  const aplicativosOrdenados = [...aplicativos].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+  )
   const [registros, setRegistros] = useState(initialRegistros)
   const [form, setForm] = useState<FormState>({ ...EMPTY, qa_id: currentUserId })
   const [isPending, startTransition] = useTransition()
@@ -264,7 +268,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
               <Input type="number" min={1} max={6} value={form.iteracion} onChange={setField('iteracion')} className="text-center" placeholder="—" />
               <Select value={form.aplicativo} onChange={setField('aplicativo')}>
                 <option value="">—</option>
-                {aplicativos.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
+                {aplicativosOrdenados.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
               </Select>
               <Input value={form.codigo_app} onChange={setField('codigo_app')} placeholder="Código" />
               <Select value={form.tipo_solicitud} onChange={setField('tipo_solicitud')}>
@@ -405,7 +409,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
               <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Aplicación</p>
               <Select value={editForm.aplicativo} onChange={setEditField('aplicativo')}>
                 <option value="">—</option>
-                {aplicativos.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
+                {aplicativosOrdenados.map((a) => <option key={a.codigo} value={a.codigo}>{a.nombre}</option>)}
               </Select>
             </div>
             <div>
