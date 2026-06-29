@@ -273,12 +273,13 @@ export async function updateRequirementAction(
   // Propagar al Planner: las actividades guardan una copia de estos campos,
   // así que al editar el req hay que sincronizarlas (si no, la tarjeta del
   // Planner queda con los datos viejos / "Sin asignar").
-  const actPatch: Record<string, unknown> = {}
+  const actPatch: { aplicativo?: string | null; ati_responsable?: string | null; qa_asignado_id?: string | null } = {}
   if ('aplicativo' in fields) actPatch.aplicativo = fields.aplicativo ?? null
   if ('ati_responsable' in fields) actPatch.ati_responsable = fields.ati_responsable ?? null
   if ('responsable_qa_id' in fields) actPatch.qa_asignado_id = fields.responsable_qa_id ?? null
   if (Object.keys(actPatch).length > 0) {
-    await supabase.from('actividades').update(actPatch).eq('requirement_id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await supabase.from('actividades').update(actPatch as any).eq('requirement_id', id)
   }
 
   revalidatePath('/requirements')
