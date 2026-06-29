@@ -208,7 +208,7 @@ export function RequirementDetailDialog({
         cp_ok: form.cp_ok,
         cp_fallo: form.cp_fallo,
         horas_estimadas: form.horas_estimadas,
-        horas_reales: form.horas_reales,
+        // horas_reales NO se envía: se calcula automáticamente desde la Bitácora vía trigger
         fecha_asignacion: form.fecha_asignacion || undefined,
         fecha_entrega_estimacion: form.fecha_entrega_estimacion || undefined,
         fecha_aprobacion_estimacion: form.fecha_aprobacion_estimacion || undefined,
@@ -591,9 +591,9 @@ export function RequirementDetailDialog({
                         <div>
                           <label className="text-xs text-slate-400">H. Real</label>
                           <div className="relative">
-                            <input type="number" min={0} value={form.horas_reales}
-                              onChange={e => setField('horas_reales', Number(e.target.value) as any)}
-                              className={`${IC_NUM} pr-7`} disabled={!canEdit} />
+                            <input type="number" value={form.horas_reales} readOnly
+                              title="Se suma automáticamente desde la Bitácora de Actividades (Nro. Ticket = código del req + iteración)"
+                              className="w-full rounded-md border border-slate-100 bg-slate-50 px-2.5 py-1.5 pr-7 text-sm text-center text-slate-400 cursor-default" />
                             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 pointer-events-none">h</span>
                           </div>
                         </div>
