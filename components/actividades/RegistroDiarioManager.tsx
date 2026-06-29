@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { ImportRegistroDiarioDialog } from './ImportRegistroDiarioDialog'
 import { TIPO_REQUERIMIENTO_LABELS, PERIODOS } from '@/lib/constants'
+import { apLabelShort } from '@/lib/aplicativos'
 import { formatDate } from '@/lib/utils'
 import type {
   RegistroDiario, Profile, AplicativoCatalogo, CatTipoTarea, TipoRequerimientoEnum,
@@ -354,7 +355,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                   <tr key={r.id} className="hover:bg-slate-50/70 group">
                     <td className="px-3 py-2 text-center">{r.periodo}</td>
                     <td className="px-3 py-2 text-center">{r.iteracion ?? '—'}</td>
-                    <td className="px-3 py-2 text-center">{r.aplicativo ?? '—'}</td>
+                    <td className="px-3 py-2 text-center">{apLabelShort(r.aplicativo, aplicativos)}</td>
                     <td className="px-3 py-2 text-center">{r.codigo_app ?? '—'}</td>
                     <td className="px-3 py-2 text-center">{r.tipo_solicitud ? TIPO_REQUERIMIENTO_LABELS[r.tipo_solicitud] : '—'}</td>
                     <td className="px-3 py-2 text-center">{r.tipo_tarea ?? '—'}</td>
