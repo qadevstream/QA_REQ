@@ -270,7 +270,20 @@ export async function updateRequirementAction(
 
   if (error) return { success: false, error: error.message }
 
+  // Propagar al Planner: las actividades guardan una copia de estos campos,
+  // así que al editar el req hay que sincronizarlas (si no, la tarjeta del
+  // Planner queda con los datos viejos / "Sin asignar").
+  const actPatch: Record<string, unknown> = {}
+  if ('aplicativo' in fields) actPatch.aplicativo = fields.aplicativo ?? null
+  if ('ati_responsable' in fields) actPatch.ati_responsable = fields.ati_responsable ?? null
+  if ('responsable_qa_id' in fields) actPatch.qa_asignado_id = fields.responsable_qa_id ?? null
+  if (Object.keys(actPatch).length > 0) {
+    await supabase.from('actividades').update(actPatch).eq('requirement_id', id)
+  }
+
   revalidatePath('/requirements')
+  revalidatePath('/planner')
+  revalidatePath('/actividades')
   const data = await findAllRequirements().then((all) => all.find((r) => r.id === id)!)
   return { success: true, data, message: 'Requerimiento actualizado.' }
 }
