@@ -163,13 +163,13 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
               <th className={`${TH} min-w-[140px]`}>Tipo</th>
               <th className={`${TH} min-w-[140px]`}>ATI</th>
               <th className={`${TH} min-w-[150px]`}>QA Resp.</th>
-              <th className={`${TH} min-w-[140px]`}>QA Apoyo 1</th>
-              <th className={`${TH} min-w-[140px]`}>QA Apoyo 2</th>
-              <th className={`${TH} min-w-[140px]`}>QA Apoyo 3</th>
               <th className={`${TH} min-w-[180px]`}>Descripción</th>
               <th className={`${TH} min-w-[110px]`}>Iteraciones</th>
               <th className={`${TH} min-w-[170px]`}>Último Estado QA</th>
               <th className={`${TH} min-w-[80px]`}>Avance</th>
+              <th className={`${TH} min-w-[140px]`}>QA Apoyo 1</th>
+              <th className={`${TH} min-w-[140px]`}>QA Apoyo 2</th>
+              <th className={`${TH} min-w-[140px]`}>QA Apoyo 3</th>
               {canEdit && <th className={`${TH} ${STICKY_RH} min-w-[70px]`} />}
             </tr>
           </thead>
@@ -227,18 +227,6 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
                       : r.responsable_qa?.full_name ?? '—'}
                   </td>
 
-                  {/* QA Apoyos */}
-                  {(['qa_apoyo_1_id', 'qa_apoyo_2_id', 'qa_apoyo_3_id'] as const).map((field, i) => {
-                    const names = [r.qa_apoyo_1?.full_name, r.qa_apoyo_2?.full_name, r.qa_apoyo_3?.full_name]
-                    return (
-                      <td key={field} className={TD}>
-                        {ed
-                          ? <Sel v={ef[field]} set={s(field)} opts={ANALISTAS_OPTS} />
-                          : <span className="text-muted-foreground">{names[i] ?? '—'}</span>}
-                      </td>
-                    )
-                  })}
-
                   {/* Descripción */}
                   <td className={TD}>
                     {ed
@@ -271,6 +259,18 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
                   <td className={`${TD} text-center`}>
                     {lastIter ? <span className="font-medium">{lastIter.avance_porcentaje}%</span> : '—'}
                   </td>
+
+                  {/* QA Apoyos */}
+                  {(['qa_apoyo_1_id', 'qa_apoyo_2_id', 'qa_apoyo_3_id'] as const).map((field, i) => {
+                    const names = [r.qa_apoyo_1?.full_name, r.qa_apoyo_2?.full_name, r.qa_apoyo_3?.full_name]
+                    return (
+                      <td key={field} className={TD}>
+                        {ed
+                          ? <Sel v={ef[field]} set={s(field)} opts={ANALISTAS_OPTS} />
+                          : <span className="text-muted-foreground">{names[i] ?? '—'}</span>}
+                      </td>
+                    )
+                  })}
 
                   {/* Acciones */}
                   {canEdit && (
