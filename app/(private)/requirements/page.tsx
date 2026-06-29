@@ -42,11 +42,16 @@ export default async function RequirementsPage({ searchParams }: PageProps) {
   const isSupervisor = session.profile.role === 'SUPERVISOR' || session.profile.role === 'ADMINISTRADOR'
   const isCliente = session.profile.role === 'CLIENTE'
 
-  const [requirements, analistas, aplicativos] = await Promise.all([
+  const [requirements, analistas, aplicativosCatalogo] = await Promise.all([
     findAllRequirements(filters),
     findAnalistas(),
     findAllAplicativos(),
   ])
+
+  // Ordenar los aplicativos alfabéticamente para los dropdowns (filtro y tabla)
+  const aplicativos = [...aplicativosCatalogo].sort((a, b) =>
+    a.codigo.localeCompare(b.codigo, 'es', { sensitivity: 'base' })
+  )
 
   return (
     <div className="flex flex-col h-screen overflow-hidden p-6 gap-4">
