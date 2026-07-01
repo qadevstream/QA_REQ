@@ -231,7 +231,8 @@ export async function updateIterationAction(
       if (act?.id) {
         const VALID_ESTADOS = [
           'PEND_ASIGNACION', 'EN_ESTIMACION', 'PEND_APROB_ATI',
-          'EN_PRUEBAS_QA', 'OBSERVADO_BLOQUEADO', 'EN_PRUEBAS_USUARIO', 'TERMINADO',
+          'EN_PRUEBAS_QA', 'OBSERVADO_BLOQUEADO', 'TERMINADO_CON_OBS', 'TERMINADO',
+          'EN_PRUEBAS_USUARIO', 'PEND_IMPLEMENTACION_PRD', 'IMPLEMENTADO_PRD',
         ]
         if (VALID_ESTADOS.includes(fields.estado_qa)) {
           await updateActividad(act.id, { estado: fields.estado_qa as any })

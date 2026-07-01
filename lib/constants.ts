@@ -21,8 +21,11 @@ export const ESTADO_QA_LABELS: Record<EstadoQaEnum, string> = {
   PEND_APROB_ATI: 'Pend. Aprob ATI',
   EN_PRUEBAS_QA: 'En Pruebas QA',
   OBSERVADO_BLOQUEADO: 'Observado / Bloqueado',
+  TERMINADO_CON_OBS: 'Terminado con Obs.',
+  TERMINADO: 'Terminado QA',
   EN_PRUEBAS_USUARIO: 'En Pruebas de Usuario',
-  TERMINADO: 'Terminado',
+  PEND_IMPLEMENTACION_PRD: 'Pend. Implementación PRD',
+  IMPLEMENTADO_PRD: 'Implementado PRD',
   CANCELADO: 'Cancelado',
 }
 
@@ -53,8 +56,11 @@ export const ESTADO_QA_ORDER: EstadoQaEnum[] = [
   'PEND_APROB_ATI',
   'EN_PRUEBAS_QA',
   'OBSERVADO_BLOQUEADO',
-  'EN_PRUEBAS_USUARIO',
+  'TERMINADO_CON_OBS',
   'TERMINADO',
+  'EN_PRUEBAS_USUARIO',
+  'PEND_IMPLEMENTACION_PRD',
+  'IMPLEMENTADO_PRD',
   'CANCELADO',
 ]
 
@@ -65,8 +71,11 @@ export const ACTIVIDAD_ESTADO_LABELS: Record<ActividadEstadoEnum, string> = {
   PEND_APROB_ATI: 'Pend. Aprob ATI',
   EN_PRUEBAS_QA: 'En Pruebas QA',
   OBSERVADO_BLOQUEADO: 'Observado / Bloqueado',
+  TERMINADO_CON_OBS: 'Terminado con Obs.',
+  TERMINADO: 'Terminado QA',
   EN_PRUEBAS_USUARIO: 'En Pruebas de Usuario',
-  TERMINADO: 'Terminado',
+  PEND_IMPLEMENTACION_PRD: 'Pend. Implementación PRD',
+  IMPLEMENTADO_PRD: 'Implementado PRD',
 }
 
 export const ACTIVIDAD_ESTADO_ORDER: ActividadEstadoEnum[] = [
@@ -75,8 +84,11 @@ export const ACTIVIDAD_ESTADO_ORDER: ActividadEstadoEnum[] = [
   'PEND_APROB_ATI',
   'EN_PRUEBAS_QA',
   'OBSERVADO_BLOQUEADO',
-  'EN_PRUEBAS_USUARIO',
+  'TERMINADO_CON_OBS',
   'TERMINADO',
+  'EN_PRUEBAS_USUARIO',
+  'PEND_IMPLEMENTACION_PRD',
+  'IMPLEMENTADO_PRD',
 ]
 
 // Prioridad estilo Planner

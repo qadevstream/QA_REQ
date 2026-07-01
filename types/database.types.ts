@@ -363,8 +363,11 @@ export type EstadoQaEnum =
   | 'PEND_APROB_ATI'
   | 'EN_PRUEBAS_QA'
   | 'OBSERVADO_BLOQUEADO'
-  | 'EN_PRUEBAS_USUARIO'
+  | 'TERMINADO_CON_OBS'
   | 'TERMINADO'
+  | 'EN_PRUEBAS_USUARIO'
+  | 'PEND_IMPLEMENTACION_PRD'
+  | 'IMPLEMENTADO_PRD'
   | 'CANCELADO'
 
 export type EstadoReqEnum =
@@ -383,8 +386,11 @@ export type ActividadEstadoEnum =
   | 'PEND_APROB_ATI'
   | 'EN_PRUEBAS_QA'
   | 'OBSERVADO_BLOQUEADO'
-  | 'EN_PRUEBAS_USUARIO'
+  | 'TERMINADO_CON_OBS'
   | 'TERMINADO'
+  | 'EN_PRUEBAS_USUARIO'
+  | 'PEND_IMPLEMENTACION_PRD'
+  | 'IMPLEMENTADO_PRD'
 
 export type ActividadPrioridadEnum = 'URGENTE' | 'IMPORTANTE' | 'MEDIA' | 'BAJA'
 export type ActividadProgresoEnum = 'NO_INICIADO' | 'EN_CURSO' | 'COMPLETADO'

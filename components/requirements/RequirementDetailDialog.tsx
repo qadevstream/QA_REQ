@@ -17,12 +17,14 @@ import type { Requirement, RequirementIteration, AplicativoCatalogo, Profile } f
 import type { EstadoQaEnum } from '@/types/database.types'
 
 const FASES_STEPPER: { key: EstadoQaEnum; label: string }[] = [
-  { key: 'PEND_ASIGNACION',     label: 'Pend. Asignación' },
-  { key: 'EN_ESTIMACION',       label: 'Estimación' },
-  { key: 'PEND_APROB_ATI',      label: 'Aprob. ATI' },
-  { key: 'EN_PRUEBAS_QA',       label: 'Pruebas QA' },
-  { key: 'EN_PRUEBAS_USUARIO',  label: 'Pruebas UAT' },
-  { key: 'TERMINADO',           label: 'Terminado' },
+  { key: 'PEND_ASIGNACION',        label: 'Pend. Asignación' },
+  { key: 'EN_ESTIMACION',          label: 'Estimación' },
+  { key: 'PEND_APROB_ATI',         label: 'Aprob. ATI' },
+  { key: 'EN_PRUEBAS_QA',          label: 'Pruebas QA' },
+  { key: 'TERMINADO',              label: 'Terminado QA' },
+  { key: 'EN_PRUEBAS_USUARIO',     label: 'Pruebas UAT' },
+  { key: 'PEND_IMPLEMENTACION_PRD', label: 'Pend. Impl. PRD' },
+  { key: 'IMPLEMENTADO_PRD',       label: 'Implementado PRD' },
 ]
 
 interface Props {

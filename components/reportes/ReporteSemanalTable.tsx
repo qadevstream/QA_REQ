@@ -59,8 +59,11 @@ const ESTADO_COLORS: Record<string, string> = {
   PEND_APROB_ATI:       'bg-yellow-100 text-yellow-700',
   EN_PRUEBAS_QA:        'bg-purple-100 text-purple-700',
   OBSERVADO_BLOQUEADO:  'bg-red-100 text-red-700',
-  EN_PRUEBAS_USUARIO:   'bg-orange-100 text-orange-700',
+  TERMINADO_CON_OBS:    'bg-amber-100 text-amber-700',
   TERMINADO:            'bg-emerald-100 text-emerald-700',
+  EN_PRUEBAS_USUARIO:   'bg-orange-100 text-orange-700',
+  PEND_IMPLEMENTACION_PRD: 'bg-sky-100 text-sky-700',
+  IMPLEMENTADO_PRD:     'bg-green-100 text-green-700',
   CANCELADO:            'bg-slate-100 text-slate-400',
 }
 

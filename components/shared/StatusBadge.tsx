@@ -11,8 +11,11 @@ const estadoConfig: Record<
   PEND_APROB_ATI:      { variant: 'purple',    label: ESTADO_QA_LABELS.PEND_APROB_ATI },
   EN_PRUEBAS_QA:       { variant: 'secondary', label: ESTADO_QA_LABELS.EN_PRUEBAS_QA },
   OBSERVADO_BLOQUEADO: { variant: 'warning',   label: ESTADO_QA_LABELS.OBSERVADO_BLOQUEADO },
-  EN_PRUEBAS_USUARIO:  { variant: 'secondary', label: ESTADO_QA_LABELS.EN_PRUEBAS_USUARIO },
+  TERMINADO_CON_OBS:   { variant: 'warning',   label: ESTADO_QA_LABELS.TERMINADO_CON_OBS },
   TERMINADO:           { variant: 'success',   label: ESTADO_QA_LABELS.TERMINADO },
+  EN_PRUEBAS_USUARIO:  { variant: 'secondary', label: ESTADO_QA_LABELS.EN_PRUEBAS_USUARIO },
+  PEND_IMPLEMENTACION_PRD: { variant: 'info',    label: ESTADO_QA_LABELS.PEND_IMPLEMENTACION_PRD },
+  IMPLEMENTADO_PRD:    { variant: 'success',   label: ESTADO_QA_LABELS.IMPLEMENTADO_PRD },
   CANCELADO:           { variant: 'slate',     label: ESTADO_QA_LABELS.CANCELADO },
 }
 

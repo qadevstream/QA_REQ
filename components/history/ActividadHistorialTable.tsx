@@ -19,8 +19,11 @@ const ESTADO_COLORS: Record<ActividadEstadoEnum, string> = {
   PEND_APROB_ATI:       'bg-yellow-100 text-yellow-700',
   EN_PRUEBAS_QA:        'bg-violet-100 text-violet-700',
   OBSERVADO_BLOQUEADO:  'bg-red-100 text-red-700',
-  EN_PRUEBAS_USUARIO:   'bg-cyan-100 text-cyan-700',
+  TERMINADO_CON_OBS:    'bg-amber-100 text-amber-700',
   TERMINADO:            'bg-green-100 text-green-700',
+  EN_PRUEBAS_USUARIO:   'bg-cyan-100 text-cyan-700',
+  PEND_IMPLEMENTACION_PRD: 'bg-sky-100 text-sky-700',
+  IMPLEMENTADO_PRD:     'bg-emerald-100 text-emerald-700',
 }
 
 function EstadoBadge({ estado }: { estado: ActividadEstadoEnum | null }) {
