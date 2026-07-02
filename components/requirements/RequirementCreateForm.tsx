@@ -5,28 +5,17 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Save, RotateCcw, AlertCircle, Hash, Calendar,
-  User, Layers, Clock, Bug, Link as LinkIcon,
-  FlaskConical, ChevronDown,
+  User, Layers, Bug, Link as LinkIcon,
+  ChevronDown,
 } from 'lucide-react'
 import { createRequirementAction } from '@/server/actions/requirements'
-import { ESTADO_QA_LABELS, TIPO_REQUERIMIENTO_LABELS } from '@/lib/constants'
+import { TIPO_REQUERIMIENTO_LABELS } from '@/lib/constants'
 import { PrioridadSelect } from '@/components/shared/PrioridadSelect'
 import type { ActionResult, AplicativoCatalogo, Requirement, Profile } from '@/types/domain.types'
 import type { ActividadPrioridadEnum } from '@/types/database.types'
 
 // ─── Catálogos estáticos ──────────────────────────────────────
-const ESTADOS_QA = Object.entries(ESTADO_QA_LABELS).map(([value, label]) => ({ value, label }))
 const TIPOS = Object.entries(TIPO_REQUERIMIENTO_LABELS).map(([value, label]) => ({ value, label }))
-const ESTADOS_REQ = [
-  { value: 'PENDIENTE',       label: 'Pendiente' },
-  { value: 'EN_DESARROLLO',   label: 'En Desarrollo' },
-  { value: 'EN_QA',           label: 'En QA' },
-  { value: 'EN_UAT',          label: 'En UAT' },
-  { value: 'APROBADO',        label: 'Aprobado' },
-  { value: 'RECHAZADO',       label: 'Rechazado' },
-  { value: 'EN_PRODUCCION',   label: 'En Producción' },
-  { value: 'CERRADO',         label: 'Cerrado' },
-]
 
 // ─── UI primitivos ────────────────────────────────────────────
 function Label({ text, required }: { text: string; required?: boolean }) {
@@ -84,20 +73,6 @@ function Textarea({ error, ...props }: React.TextareaHTMLAttributes<HTMLTextArea
         outline-none transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none
         ${error ? 'border-red-400' : 'border-slate-200 hover:border-slate-300'}`}
     />
-  )
-}
-
-function NumBox({ name, label, value, onChange, accent = '#0184EF' }: {
-  name: string; label: string; value: number; onChange: (v: number) => void; accent?: string
-}) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 space-y-1.5">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-center" style={{ color: accent }}>{label}</p>
-      <input type="number" name={name} min={0} value={value}
-        onChange={e => onChange(Number(e.target.value))}
-        className="w-full bg-transparent text-center text-xl font-bold text-slate-900 outline-none"
-      />
-    </div>
   )
 }
 
@@ -187,8 +162,6 @@ export function RequirementCreateForm({ analistas, aplicativos }: RequirementCre
   const handleReset = () => { setForm(EMPTY); setErrors({}) }
 
   const totalDefectos = form.defectos_qa + form.defectos_uat + form.defectos_produccion
-  const cpTotal = form.cp_ok + form.cp_fallo
-  const pctOk = cpTotal > 0 ? Math.round((form.cp_ok / cpTotal) * 100) : 0
 
   return (
     <form action={formAction} onSubmit={handleClientSubmit} className="flex-1 flex flex-col overflow-auto">
@@ -362,91 +335,6 @@ export function RequirementCreateForm({ analistas, aplicativos }: RequirementCre
               <Label text="Descripción — Objetivo, Beneficios y Módulos" />
               <Textarea name="descripcion" value={form.descripcion} onChange={f('descripcion')} rows={6}
                 placeholder={'Objetivo:\n\nBeneficios:\n\nMódulos afectados:'} />
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* ── 3. Estado QA + Casos de Prueba ── */}
-        <SectionCard id="sec-estado" icon={FlaskConical} title="Estado QA y Ejecución de Casos de Prueba" accent="#7C3AED">
-          <div className="grid grid-cols-3 gap-4 mb-5">
-            <div>
-              <Label text="Estado QA" />
-              <Select name="estado_qa" value={form.estado_qa} onChange={f('estado_qa')}>
-                {ESTADOS_QA.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-              </Select>
-            </div>
-            <div>
-              <Label text="Estado del Requerimiento" />
-              <Select name="estado_req" value={form.estado_req} onChange={f('estado_req')}>
-                <option value="">Seleccionar…</option>
-                {ESTADOS_REQ.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-              </Select>
-            </div>
-            <div>
-              <Label text="Iteración" />
-              <Input type="number" name="iteracion" min={1} value={form.iteracion} onChange={f('iteracion')} />
-            </div>
-          </div>
-
-          <div className="border-t border-slate-100 pt-4">
-            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Casos de Prueba (CP)</p>
-            <input type="hidden" name="cp_total" value={cpTotal} />
-            <div className="grid grid-cols-3 gap-3 mb-3">
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-1.5">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-center text-[#0184EF]">Total CP</p>
-                <p className="text-center text-xl font-bold text-slate-700">{cpTotal}</p>
-              </div>
-              <NumBox name="cp_ok"    label="CP OK"    value={form.cp_ok}    onChange={v => setForm(p => ({ ...p, cp_ok: v }))}    accent="#10B981" />
-              <NumBox name="cp_fallo" label="CP Fallo" value={form.cp_fallo} onChange={v => setForm(p => ({ ...p, cp_fallo: v }))} accent="#EF4444" />
-            </div>
-
-            {cpTotal > 0 && (
-              <div className="mt-4 rounded-lg bg-slate-50 border border-slate-100 px-4 py-3 flex items-center gap-4">
-                <span className="text-xs font-semibold text-slate-500 w-16 shrink-0">Ejecución</span>
-                <div className="flex-1 flex h-2.5 rounded-full overflow-hidden bg-slate-200">
-                  <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pctOk}%` }} />
-                  <div className="h-full bg-red-500 transition-all" style={{ width: `${Math.round((form.cp_fallo / cpTotal) * 100)}%` }} />
-                </div>
-                <span className="text-xs font-bold text-slate-700 w-10 text-right">{pctOk}%</span>
-              </div>
-            )}
-          </div>
-        </SectionCard>
-
-        {/* ── 4. Horas ── */}
-        <SectionCard id="sec-horas" icon={Clock} title="Control de Horas" accent="#10B981">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg border-2 border-emerald-200 bg-emerald-50 p-4">
-              <Label text="Total Horas Estimadas" />
-              <Input type="number" name="horas_estimadas" min={0} step={0.01} value={form.horas_estimadas} onChange={f('horas_estimadas')}
-                className="text-center text-lg font-bold" />
-            </div>
-            <div className="rounded-lg border-2 border-slate-200 bg-slate-50 p-4">
-              <Label text="Total Horas Reales" />
-              <p className="text-center text-lg font-bold text-slate-400">— se calcula desde Actividades</p>
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* ── 5. Fechas ── */}
-        <SectionCard id="sec-fechas" icon={Calendar} title="Fechas de Planificación y Entrega" accent="#F59E0B">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4 lg:grid-cols-3">
-            <div className="rounded-lg border-2 border-sky-200 bg-sky-50 p-3">
-              <Label text="Inicio Atención — PLANIFICADA" />
-              <Input type="date" name="fecha_inicio_planificada" value={form.fecha_inicio_planificada} onChange={f('fecha_inicio_planificada')} />
-            </div>
-            <div className="rounded-lg border-2 border-sky-300 bg-sky-100 p-3">
-              <Label text="Inicio Atención — REAL" />
-              <Input type="date" name="fecha_inicio_real" value={form.fecha_inicio_real} onChange={f('fecha_inicio_real')} />
-            </div>
-            <div />
-            <div className="rounded-lg border-2 border-orange-200 bg-orange-50 p-3">
-              <Label text="Entrega — PLANIFICADA" />
-              <Input type="date" name="fecha_entrega_planificada" value={form.fecha_entrega_planificada} onChange={f('fecha_entrega_planificada')} />
-            </div>
-            <div className="rounded-lg border-2 border-orange-300 bg-orange-100 p-3">
-              <Label text="Entrega — REAL" />
-              <Input type="date" name="fecha_entrega_real" value={form.fecha_entrega_real} onChange={f('fecha_entrega_real')} />
             </div>
           </div>
         </SectionCard>
