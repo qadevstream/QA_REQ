@@ -4,9 +4,9 @@ import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle, Clock } from 'lucide-react'
 
-export function LoginForm({ error }: { error?: string }) {
+export function LoginForm({ error, motivo }: { error?: string; motivo?: string }) {
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -49,6 +49,18 @@ export function LoginForm({ error }: { error?: string }) {
           <h2 className="text-[22px] font-semibold text-white">Bienvenido de nuevo</h2>
           <p className="mt-1 text-[14px] text-[#A7B3C7]">Inicia sesión para continuar</p>
         </div>
+
+        {/* Aviso de cierre por inactividad */}
+        {motivo === 'inactividad' && !error && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-5 flex items-center gap-2 rounded-xl border border-[#F59E0B]/30 bg-[#F59E0B]/10 px-3.5 py-2.5 text-[13px] text-[#FCD34D]"
+          >
+            <Clock className="h-4 w-4 shrink-0" />
+            <span>Tu sesión se cerró por 10 minutos de inactividad. Vuelve a iniciar sesión.</span>
+          </motion.div>
+        )}
 
         {/* Error */}
         {error && (

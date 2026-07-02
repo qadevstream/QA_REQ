@@ -2,11 +2,11 @@ import { LoginShowcase } from '@/components/login/LoginShowcase'
 import { LoginForm } from '@/components/login/LoginForm'
 
 interface Props {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; motivo?: string }>
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { error } = await searchParams
+  const { error, motivo } = await searchParams
 
   return (
     <main className="relative flex min-h-screen w-full overflow-hidden">
@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: Props) {
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2563EB]/20 blur-[120px]"
         />
-        <LoginForm error={error} />
+        <LoginForm error={error} motivo={motivo} />
       </section>
     </main>
   )
