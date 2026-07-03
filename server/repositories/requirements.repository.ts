@@ -213,6 +213,20 @@ export interface RequirementSummary {
   responsable_qa_id: string | null
 }
 
+/** Códigos de aplicativo que aparecen en al menos un requerimiento registrado. */
+export async function findUsedAplicativoCodigos(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('requirements')
+    .select('aplicativo')
+  if (error) throw new Error(error.message)
+  const set = new Set<string>()
+  for (const r of (data ?? []) as { aplicativo: string | null }[]) {
+    if (r.aplicativo) set.add(r.aplicativo)
+  }
+  return [...set]
+}
+
 export async function findRequirementsSummary(): Promise<RequirementSummary[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
