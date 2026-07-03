@@ -102,6 +102,16 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
     return (v: string) => setEf(prev => prev ? { ...prev, [field]: v } : prev)
   }
 
+  // Al cambiar el aplicativo, autocompletar el ATI Responsable desde el catálogo
+  // (si el aplicativo tiene uno definido). Igual que en el alta de requerimiento.
+  function setAplicativo(codigo: string) {
+    setEf(prev => {
+      if (!prev) return prev
+      const ati = aplicativos.find(a => a.codigo === codigo)?.ati_responsable
+      return { ...prev, aplicativo: codigo, ati_responsable: ati ?? prev.ati_responsable }
+    })
+  }
+
   function handleSave(id: string) {
     if (!ef) return
     startTransition(async () => {
@@ -199,10 +209,10 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
                       : <span className="max-w-[190px] block truncate">{r.titulo || '—'}</span>}
                   </td>
 
-                  {/* Aplicativo */}
+                  {/* Aplicativo — al cambiarlo autocompleta el ATI desde el catálogo */}
                   <td className={TD}>
                     {ed
-                      ? <Sel v={ef.aplicativo} set={s('aplicativo')} opts={APLIC_OPTS} />
+                      ? <Sel v={ef.aplicativo} set={setAplicativo} opts={APLIC_OPTS} />
                       : <span className="text-muted-foreground">{apLabelShort(r.aplicativo, aplicativos)}</span>}
                   </td>
 
