@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Save, RotateCcw, AlertCircle, Hash, Calendar,
-  User, Layers, Bug, Link as LinkIcon,
-  ChevronDown,
+  User, Layers, ChevronDown,
 } from 'lucide-react'
 import { createRequirementAction } from '@/server/actions/requirements'
 import { TIPO_REQUERIMIENTO_LABELS } from '@/lib/constants'
@@ -160,8 +159,6 @@ export function RequirementCreateForm({ analistas, aplicativos }: RequirementCre
   }
 
   const handleReset = () => { setForm(EMPTY); setErrors({}) }
-
-  const totalDefectos = form.defectos_qa + form.defectos_uat + form.defectos_produccion
 
   return (
     <form action={formAction} onSubmit={handleClientSubmit} className="flex-1 flex flex-col overflow-auto">
@@ -335,52 +332,6 @@ export function RequirementCreateForm({ analistas, aplicativos }: RequirementCre
               <Label text="Descripción — Objetivo, Beneficios y Módulos" />
               <Textarea name="descripcion" value={form.descripcion} onChange={f('descripcion')} rows={6}
                 placeholder={'Objetivo:\n\nBeneficios:\n\nMódulos afectados:'} />
-            </div>
-          </div>
-        </SectionCard>
-
-        {/* ── 6. Defectos ── */}
-        <SectionCard id="sec-defectos" icon={Bug} title="Registro de Defectos" accent="#EF4444">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-lg border-2 border-blue-200 bg-blue-50 p-4 text-center space-y-2">
-              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Defectos en QA</p>
-              <input type="number" name="defectos_qa" min={0} value={form.defectos_qa}
-                onChange={f('defectos_qa')}
-                className="w-full bg-transparent text-center text-3xl font-bold text-blue-700 outline-none" />
-            </div>
-            <div className="rounded-lg border-2 border-amber-200 bg-amber-50 p-4 text-center space-y-2">
-              <p className="text-xs font-bold text-amber-700 uppercase tracking-wide">Defectos en UAT</p>
-              <input type="number" name="defectos_uat" min={0} value={form.defectos_uat}
-                onChange={f('defectos_uat')}
-                className="w-full bg-transparent text-center text-3xl font-bold text-amber-600 outline-none" />
-            </div>
-            <div className="rounded-lg border-2 border-red-200 bg-red-50 p-4 text-center space-y-2">
-              <p className="text-xs font-bold text-red-700 uppercase tracking-wide">Defectos en Producción</p>
-              <input type="number" name="defectos_produccion" min={0} value={form.defectos_produccion}
-                onChange={f('defectos_produccion')}
-                className="w-full bg-transparent text-center text-3xl font-bold text-red-600 outline-none" />
-            </div>
-          </div>
-          {totalDefectos > 0 && (
-            <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-50 border border-slate-200 px-5 py-3">
-              <span className="text-sm font-semibold text-slate-600">Total de Defectos</span>
-              <span className="text-2xl font-bold text-red-600">{totalDefectos}</span>
-            </div>
-          )}
-        </SectionCard>
-
-        {/* ── 7. Evidencias y Observaciones ── */}
-        <SectionCard id="sec-evidencias" icon={LinkIcon} title="Rutas de Estimación, Evidencias y Observaciones" accent="#DB2777">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-            <div className="col-span-2">
-              <Label text="Rutas de Estimación y Evidencias de Pruebas" />
-              <Textarea name="rutas_evidencias" value={form.rutas_evidencias} onChange={f('rutas_evidencias')} rows={3}
-                placeholder={'https://drive.google.com/...\nhttps://confluence.empresa.com/...'} />
-            </div>
-            <div>
-              <Label text="Observaciones de Estado (tck)" />
-              <Textarea name="observaciones_estado" value={form.observaciones_estado} onChange={f('observaciones_estado')} rows={3}
-                placeholder="Observaciones sobre el estado actual..." />
             </div>
           </div>
         </SectionCard>
