@@ -49,9 +49,6 @@ export async function findAllRequirements(
     .select(SELECT_WITH_QA)
     .order('created_at', { ascending: false })
 
-  if (filters.estado_qa && filters.estado_qa !== 'ALL') {
-    query = query.eq('requirement_iterations.estado_qa', filters.estado_qa)
-  }
   if (filters.aplicativo && filters.aplicativo !== 'ALL') {
     query = query.eq('aplicativo', filters.aplicativo)
   }
@@ -66,7 +63,19 @@ export async function findAllRequirements(
 
   const { data, error } = await query
   if (error) throw new Error(error.message)
-  return (data as unknown as Record<string, unknown>[]).map(normalize)
+  let result = (data as unknown as Record<string, unknown>[]).map(normalize)
+
+  // Filtro "Último Estado QA": la ÚLTIMA iteración (mayor número) debe estar en
+  // ese estado. Se resuelve en memoria porque un filtro embebido de PostgREST
+  // filtra las iteraciones, no el requerimiento padre, y no distingue la última.
+  if (filters.estado_qa && filters.estado_qa !== 'ALL') {
+    result = result.filter((r) => {
+      const iters = r.iterations ?? []
+      return iters[iters.length - 1]?.estado_qa === filters.estado_qa
+    })
+  }
+
+  return result
 }
 
 export async function findRequirementById(id: string): Promise<Requirement | null> {
