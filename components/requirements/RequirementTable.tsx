@@ -73,6 +73,12 @@ export function RequirementTable({ requirements, aplicativos = [], analistas = [
   const [isDeleting, startDelete] = useTransition()
   const [detailReq, setDetailReq] = useState<Requirement | null>(null)
 
+  // Re-sincronizar las filas cuando el servidor devuelve nuevos datos
+  // (p. ej. al aplicar un filtro de estado / aplicativo / QA responsable).
+  useEffect(() => {
+    setRows(requirements)
+  }, [requirements])
+
   useEffect(() => {
     if (openId) {
       const found = requirements.find(r => r.id === openId)
