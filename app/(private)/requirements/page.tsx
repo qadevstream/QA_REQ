@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { RequirementFilters } from '@/components/requirements/RequirementFilters'
 import { RequirementTable } from '@/components/requirements/RequirementTable'
 import { RequirementsImportButton } from '@/components/requirements/RequirementsImportButton'
-import { findAllRequirements, findUsedAplicativoCodigos } from '@/server/repositories/requirements.repository'
+import { findAllRequirements, findUsedAplicativoCodigos, findUsedEstadosQa } from '@/server/repositories/requirements.repository'
 import { findAnalistas } from '@/server/repositories/profiles.repository'
 import { findAllAplicativos } from '@/server/repositories/aplicativosCatalogo.repository'
 import { getCurrentUser } from '@/server/actions/auth'
@@ -42,11 +42,12 @@ export default async function RequirementsPage({ searchParams }: PageProps) {
   const isSupervisor = session.profile.role === 'SUPERVISOR' || session.profile.role === 'ADMINISTRADOR'
   const isCliente = session.profile.role === 'CLIENTE'
 
-  const [requirements, analistas, aplicativosCatalogo, usedAplicativos] = await Promise.all([
+  const [requirements, analistas, aplicativosCatalogo, usedAplicativos, usedEstados] = await Promise.all([
     findAllRequirements(filters),
     findAnalistas(),
     findAllAplicativos(),
     findUsedAplicativoCodigos(),
+    findUsedEstadosQa(),
   ])
 
   // Catálogo completo ordenado alfabéticamente (para editar en la tabla)
@@ -54,9 +55,10 @@ export default async function RequirementsPage({ searchParams }: PageProps) {
     a.codigo.localeCompare(b.codigo, 'es', { sensitivity: 'base' })
   )
 
-  // Para el FILTRO: solo los aplicativos que aparecen en requerimientos registrados
+  // Para el FILTRO: solo los aplicativos y estados que aparecen en requerimientos registrados
   const usedSet = new Set(usedAplicativos)
   const aplicativosEnUso = aplicativos.filter((a) => usedSet.has(a.codigo))
+  const estadosEnUso = usedEstados as EstadoQaEnum[]
 
   return (
     <div className="flex flex-col h-screen overflow-hidden p-6 gap-4">
@@ -81,7 +83,7 @@ export default async function RequirementsPage({ searchParams }: PageProps) {
       </div>
 
       <div className="shrink-0">
-        <RequirementFilters analistas={analistas} aplicativos={aplicativosEnUso} />
+        <RequirementFilters analistas={analistas} aplicativos={aplicativosEnUso} estados={estadosEnUso} />
       </div>
 
       <Card className="flex-1 min-h-0 overflow-hidden">

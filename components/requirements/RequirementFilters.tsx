@@ -10,15 +10,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ESTADO_QA_LABELS } from '@/lib/constants'
+import { ESTADO_QA_LABELS, ESTADO_QA_ORDER } from '@/lib/constants'
 import type { Profile, AplicativoCatalogo } from '@/types/domain.types'
+import type { EstadoQaEnum } from '@/types/database.types'
 
 interface RequirementFiltersProps {
   analistas: Profile[]
   aplicativos?: AplicativoCatalogo[]
+  estados?: EstadoQaEnum[]
 }
 
-export function RequirementFilters({ analistas, aplicativos = [] }: RequirementFiltersProps) {
+export function RequirementFilters({ analistas, aplicativos = [], estados }: RequirementFiltersProps) {
+  // Solo los estados en uso (si no se pasan, se muestran todos), en el orden del flujo.
+  const estadosMostrar = ESTADO_QA_ORDER.filter((e) => (estados ?? ESTADO_QA_ORDER).includes(e))
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -49,8 +53,8 @@ export function RequirementFilters({ analistas, aplicativos = [] }: RequirementF
         <SelectTrigger className="w-[170px]"><SelectValue placeholder="Estado QA" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="ALL">Todos los estados</SelectItem>
-          {Object.entries(ESTADO_QA_LABELS).map(([value, label]) => (
-            <SelectItem key={value} value={value}>{label}</SelectItem>
+          {estadosMostrar.map((value) => (
+            <SelectItem key={value} value={value}>{ESTADO_QA_LABELS[value]}</SelectItem>
           ))}
         </SelectContent>
       </Select>

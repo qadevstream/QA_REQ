@@ -213,6 +213,27 @@ export interface RequirementSummary {
   responsable_qa_id: string | null
 }
 
+/** Estados QA que son el "último estado" (última iteración) de algún requerimiento. */
+export async function findUsedEstadosQa(): Promise<string[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('requirement_iterations')
+    .select('requirement_id, iteracion, estado_qa')
+  if (error) throw new Error(error.message)
+
+  // Por cada requerimiento, quedarnos con la iteración de mayor número.
+  const lastByReq = new Map<string, { iteracion: number; estado_qa: string }>()
+  for (const row of (data ?? []) as { requirement_id: string; iteracion: number; estado_qa: string }[]) {
+    const cur = lastByReq.get(row.requirement_id)
+    if (!cur || row.iteracion > cur.iteracion) {
+      lastByReq.set(row.requirement_id, { iteracion: row.iteracion, estado_qa: row.estado_qa })
+    }
+  }
+  const set = new Set<string>()
+  for (const v of lastByReq.values()) if (v.estado_qa) set.add(v.estado_qa)
+  return [...set]
+}
+
 /** Códigos de aplicativo que aparecen en al menos un requerimiento registrado. */
 export async function findUsedAplicativoCodigos(): Promise<string[]> {
   const supabase = await createClient()
