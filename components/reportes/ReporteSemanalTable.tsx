@@ -168,19 +168,36 @@ export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
     [filterPeriodo]
   )
 
+  // El período se evalúa a nivel de REQUERIMIENTO (no por iteración): un req
+  // pertenece al período si alguna de sus iteraciones tiene fecha_asignacion
+  // dentro del rango (o si ninguna tiene fecha, para no ocultarlo). Así, cuando
+  // un req entra en el período, se muestran TODAS sus iteraciones.
+  const reqEnPeriodo = useMemo(() => {
+    if (!periodoActivo) return null
+    const set = new Set<string>()
+    for (const req of requirements) {
+      const fechas = (req.iterations ?? [])
+        .map(it => it.fecha_asignacion)
+        .filter(Boolean) as string[]
+      const enPeriodo =
+        fechas.length === 0 ||
+        fechas.some(f => f >= periodoActivo.from && f <= periodoActivo.to)
+      if (enPeriodo) set.add(req.codigo_requerimiento)
+    }
+    return set
+  }, [requirements, periodoActivo])
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase()
     return rows.filter(r => {
       if (filterAplicativo !== 'ALL' && r.aplicativo !== filterAplicativo) return false
       if (filterEstado !== 'ALL' && r.estado_qa !== filterEstado) return false
-      if (periodoActivo && r.fecha_asignacion) {
-        if (r.fecha_asignacion < periodoActivo.from || r.fecha_asignacion > periodoActivo.to) return false
-      }
+      if (reqEnPeriodo && !reqEnPeriodo.has(r.codigo)) return false
       if (q && !r.codigo.toLowerCase().includes(q) && !r.titulo.toLowerCase().includes(q) &&
           !r.qa_responsable.toLowerCase().includes(q)) return false
       return true
     })
-  }, [rows, search, filterAplicativo, filterEstado, periodoActivo])
+  }, [rows, search, filterAplicativo, filterEstado, reqEnPeriodo])
 
   return (
     <div className="space-y-3">
