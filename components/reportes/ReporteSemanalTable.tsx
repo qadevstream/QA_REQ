@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Download, Search, CalendarDays } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Download, Search, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
 import { apLabelShort } from '@/lib/aplicativos'
 import { TIPO_REQUERIMIENTO_LABELS, ESTADO_QA_LABELS, ACTIVIDAD_PROGRESO_LABELS, PERIODOS } from '@/lib/constants'
 import { formatDate } from '@/lib/utils'
@@ -103,6 +103,8 @@ function exportToCSV(rows: FlatRow[]) {
 // Períodos descendentes (más reciente primero), excluyendo el primero irregular
 const PERIODO_OPTIONS = [...PERIODOS].reverse()
 
+const PAGE_SIZE = 20
+
 export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
   const [search, setSearch] = useState('')
   const [filterAplicativo, setFilterAplicativo] = useState('ALL')
@@ -191,6 +193,17 @@ export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
     })
   }, [rows, search, filterAplicativo, filterEstado, reqEnPeriodo])
 
+  // ── Paginación ──────────────────────────────────────────────
+  const [page, setPage] = useState(1)
+  // Al cambiar cualquier filtro/búsqueda, volver a la primera página
+  useEffect(() => { setPage(1) }, [search, filterAplicativo, filterEstado, filterPeriodo])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const pageSafe = Math.min(page, totalPages)
+  const paginated = filtered.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE)
+  const desde = filtered.length === 0 ? 0 : (pageSafe - 1) * PAGE_SIZE + 1
+  const hasta = Math.min(pageSafe * PAGE_SIZE, filtered.length)
+
   return (
     <div className="space-y-3">
       {/* Toolbar */}
@@ -278,7 +291,7 @@ export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
               <tr>
                 <td colSpan={27} className="py-10 text-center text-slate-400">Sin resultados</td>
               </tr>
-            ) : filtered.map((r, i) => (
+            ) : paginated.map((r, i) => (
               <tr key={`${r.codigo}-${r.iteracion}`} className={`border-b border-slate-50 hover:bg-slate-50 transition-colors ${i % 2 === 0 ? '' : 'bg-slate-50/50'}`}>
                 <td className="px-3 py-2 font-mono font-semibold text-blue-600 whitespace-nowrap">{r.codigo}</td>
                 <td className="px-3 py-2 max-w-[180px] truncate" title={r.titulo}>{r.titulo || '—'}</td>
@@ -334,6 +347,36 @@ export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
           </tbody>
         </table>
       </div>
+
+      {/* Paginador */}
+      {filtered.length > 0 && (
+        <div className="flex items-center justify-end gap-3 text-xs text-slate-500">
+          <span>
+            {desde}–{hasta} de {filtered.length}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={pageSafe <= 1}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Página anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="px-1 font-medium text-slate-700">
+              {pageSafe} / {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={pageSafe >= totalPages}
+              className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              aria-label="Página siguiente"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
