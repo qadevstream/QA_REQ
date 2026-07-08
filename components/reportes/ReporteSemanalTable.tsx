@@ -103,19 +103,11 @@ function exportToCSV(rows: FlatRow[]) {
 // Períodos descendentes (más reciente primero), excluyendo el primero irregular
 const PERIODO_OPTIONS = [...PERIODOS].reverse()
 
-// Detectar el período actual
-function getCurrentPeriodoValue(): string {
-  const today = new Date()
-  const todayStr = today.toISOString().slice(0, 10)
-  const found = PERIODOS.find(p => p.from <= todayStr && todayStr <= p.to)
-  return found?.value ?? PERIODO_OPTIONS[0]?.value ?? 'ALL'
-}
-
 export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
   const [search, setSearch] = useState('')
   const [filterAplicativo, setFilterAplicativo] = useState('ALL')
   const [filterEstado, setFilterEstado] = useState('ALL')
-  const [filterPeriodo, setFilterPeriodo] = useState<string>(() => getCurrentPeriodoValue())
+  const [filterPeriodo, setFilterPeriodo] = useState<string>('ALL')
 
   const rows: FlatRow[] = useMemo(() => {
     const result: FlatRow[] = []
