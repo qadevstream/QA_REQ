@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect, useRef } from 'react'
+import { useState, useTransition, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload } from 'lucide-react'
@@ -21,6 +21,7 @@ import { formatDate } from '@/lib/utils'
 import type {
   RegistroDiario, Profile, AplicativoCatalogo, CatTipoTarea, TipoRequerimientoEnum,
 } from '@/types/domain.types'
+import type { RequirementSummary } from '@/server/repositories/requirements.repository'
 
 function Select({ className = '', children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
@@ -56,11 +57,12 @@ interface RegistroDiarioManagerProps {
   analistas: Profile[]
   aplicativos: AplicativoCatalogo[]
   tiposTarea: CatTipoTarea[]
+  requirements: RequirementSummary[]
   currentUserId: string
   isSupervisor: boolean
 }
 
-export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos, tiposTarea, currentUserId, isSupervisor }: RegistroDiarioManagerProps) {
+export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos, tiposTarea, requirements, currentUserId, isSupervisor }: RegistroDiarioManagerProps) {
   const router = useRouter()
   // Aplicativos ordenados alfabéticamente (A-Z) por nombre para los dropdowns
   const aplicativosOrdenados = [...aplicativos].sort((a, b) =>
@@ -129,6 +131,26 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
   function handleAplicativoChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const codigo = e.target.value
     setForm((prev) => ({ ...prev, aplicativo: codigo, codigo_app: codigo }))
+  }
+
+  // Mapa código de requerimiento → requerimiento, para autocompletar al
+  // escribir el Nº de ticket en la fila de captura.
+  const reqByCode = useMemo(
+    () => new Map(requirements.map((r) => [r.codigo_requerimiento.trim().toUpperCase(), r])),
+    [requirements],
+  )
+
+  // Al colocar el Nº de ticket/req, autocompletar Aplicación y Código App
+  // desde el requerimiento que coincida con ese código. Si no hay coincidencia,
+  // solo actualiza el ticket y respeta lo que el usuario haya puesto a mano.
+  function handleNroTicketChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value
+    const match = reqByCode.get(value.trim().toUpperCase())
+    setForm((prev) =>
+      match?.aplicativo
+        ? { ...prev, nro_ticket: value, aplicativo: match.aplicativo, codigo_app: match.aplicativo }
+        : { ...prev, nro_ticket: value },
+    )
   }
 
   function handleAdd() {
@@ -305,7 +327,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                 <option value="EP11">EP11</option>
                 <option value="AP11">AP11</option>
               </Select>
-              <Input value={form.nro_ticket} onChange={setField('nro_ticket')} placeholder="TCK-001" />
+              <Input list="rd-req-codes" value={form.nro_ticket} onChange={handleNroTicketChange} placeholder="TCK-001" />
               <Input type="date" value={form.fecha_reporte} onChange={setField('fecha_reporte')} />
               <Input value={form.observaciones} onChange={setField('observaciones')} placeholder="Observaciones..." />
 
@@ -320,6 +342,13 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
             </div>
           </div>
         </div>
+
+        {/* Sugerencias de Nº de ticket/req para autocompletar Aplicación y Código App */}
+        <datalist id="rd-req-codes">
+          {requirements.map((r) => (
+            <option key={r.id} value={r.codigo_requerimiento}>{r.titulo ?? ''}</option>
+          ))}
+        </datalist>
 
         {/* Tabla de registros */}
         {registros.length === 0 ? (

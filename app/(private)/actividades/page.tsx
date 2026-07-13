@@ -5,6 +5,7 @@ import { findAllRegistroDiario } from '@/server/repositories/registroDiario.repo
 import { findAnalistas } from '@/server/repositories/profiles.repository'
 import { findAllAplicativos } from '@/server/repositories/aplicativosCatalogo.repository'
 import { findAllCatTipoTareas } from '@/server/repositories/catTipoTarea.repository'
+import { findRequirementsSummary } from '@/server/repositories/requirements.repository'
 import { RegistroDiarioManager } from '@/components/actividades/RegistroDiarioManager'
 
 export const metadata: Metadata = { title: 'Actividades' }
@@ -15,11 +16,12 @@ export default async function ActividadesPage() {
 
   const isSupervisor = session.profile.role === 'SUPERVISOR' || session.profile.role === 'ADMINISTRADOR'
 
-  const [registros, analistas, aplicativos, tiposTarea] = await Promise.all([
+  const [registros, analistas, aplicativos, tiposTarea, requirements] = await Promise.all([
     findAllRegistroDiario(isSupervisor ? {} : { qa_id: session.userId }),
     findAnalistas(),
     findAllAplicativos(),
     findAllCatTipoTareas(),
+    findRequirementsSummary(),
   ])
 
   return (
@@ -29,6 +31,7 @@ export default async function ActividadesPage() {
         analistas={analistas}
         aplicativos={aplicativos}
         tiposTarea={tiposTarea}
+        requirements={requirements}
         currentUserId={session.userId}
         isSupervisor={isSupervisor}
       />
