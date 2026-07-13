@@ -24,12 +24,12 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'requerimientos', label: 'Requerimientos', icon: ClipboardList,   href: '/requirements' },
   { id: 'planner',        label: 'Planner',        icon: CalendarDays,    href: '/planner' },
   { id: 'actividades',    label: 'Actividades',    icon: Clock,           href: '/actividades' },
-  { id: 'dashboard',      label: 'Dashboard',      icon: BarChart2,       href: '/dashboard',     supervisorOnly: true },
+  { id: 'dashboard',      label: 'Dashboard',      icon: BarChart2,       href: '/dashboard' },
   { id: 'informes',       label: 'Informes',       icon: FileBarChart,    href: '/informes' },
   { id: 'reportes',       label: 'Reportes',       icon: TableProperties, href: '/reportes' },
   { id: 'analistas',      label: 'Analistas',      icon: Users,           href: '/analistas',     supervisorOnly: true },
   { id: 'auditoria',      label: 'Auditoría',      icon: History,         href: '/audit',         supervisorOnly: true },
-  { id: 'mantenimiento',  label: 'Mantenimiento',  icon: Settings2,       href: '/mantenimiento', supervisorOnly: true },
+  { id: 'mantenimiento',  label: 'Mantenimiento',  icon: Settings2,       href: '/mantenimiento' },
 ]
 
 const ROLE_LABELS: Record<string, string> = {

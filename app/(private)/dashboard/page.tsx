@@ -23,7 +23,7 @@ interface Props {
 export default async function DashboardPage({ searchParams }: Props) {
   const session = await getCurrentUser()
   if (!session) redirect('/login')
-  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') redirect('/requirements')
+  if (session.profile.role === 'CLIENTE') redirect('/requirements')
 
   const params = await searchParams
   const year  = params.year  ? parseInt(params.year)  : undefined

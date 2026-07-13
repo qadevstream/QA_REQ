@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Mantenimiento' }
 export default async function MantenimientoPage() {
   const session = await getCurrentUser()
   if (!session) redirect('/login')
-  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') redirect('/requirements')
+  if (session.profile.role === 'CLIENTE') redirect('/requirements')
 
   const [aplicativos, catTipoTareas] = await Promise.all([
     findAllAplicativos(false),

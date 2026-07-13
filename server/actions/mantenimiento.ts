@@ -19,17 +19,23 @@ import {
 import { getCurrentUser } from '@/server/actions/auth'
 import type { ActionResult, AplicativoCatalogo, CatAplicativo, CatTipoTarea } from '@/types/domain.types'
 
-async function requireSupervisor() {
+// Pueden modificar los catálogos de Mantenimiento: Supervisor, Administrador
+// y Analista QA. El Cliente queda excluido. La RLS (migración 036) refleja
+// este mismo permiso en la base de datos.
+async function requireCatalogEditor() {
   const session = await getCurrentUser()
   if (!session) return { error: 'No autenticado.' }
-  if (session.profile.role !== 'SUPERVISOR' && session.profile.role !== 'ADMINISTRADOR') return { error: 'Solo un Supervisor puede modificar el catálogo.' }
+  const rol = session.profile.role
+  if (rol !== 'SUPERVISOR' && rol !== 'ADMINISTRADOR' && rol !== 'ANALISTA_QA') {
+    return { error: 'No tienes permiso para modificar el catálogo.' }
+  }
   return { session }
 }
 
 export async function createAplicativoAction(
   input: { codigo: string; nombre: string; color?: string; ati_responsable?: string; correo?: string; aplicativo_grupo?: string }
 ): Promise<ActionResult<AplicativoCatalogo>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   if (!input.codigo.trim()) return { success: false, error: 'El código es obligatorio.' }
@@ -57,7 +63,7 @@ export async function updateAplicativoAction(
   codigo: string,
   input: { nombre?: string; color?: string; activo?: boolean; ati_responsable?: string | null; correo?: string | null; aplicativo_grupo?: string | null }
 ): Promise<ActionResult<AplicativoCatalogo>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
@@ -70,7 +76,7 @@ export async function updateAplicativoAction(
 }
 
 export async function deleteAplicativoAction(codigo: string): Promise<ActionResult> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
@@ -87,7 +93,7 @@ export async function deleteAplicativoAction(codigo: string): Promise<ActionResu
 export async function createCatAplicativoAction(
   input: { aplicativo: string }
 ): Promise<ActionResult<CatAplicativo>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   if (!input.aplicativo.trim()) return { success: false, error: 'El nombre del aplicativo es obligatorio.' }
@@ -105,7 +111,7 @@ export async function updateCatAplicativoAction(
   aplicativo: string,
   input: { activo?: boolean }
 ): Promise<ActionResult<CatAplicativo>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
@@ -118,7 +124,7 @@ export async function updateCatAplicativoAction(
 }
 
 export async function deleteCatAplicativoAction(aplicativo: string): Promise<ActionResult> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
@@ -135,7 +141,7 @@ export async function deleteCatAplicativoAction(aplicativo: string): Promise<Act
 export async function createCatTipoTareaAction(
   input: { tipo_tarea: string }
 ): Promise<ActionResult<CatTipoTarea>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   if (!input.tipo_tarea.trim()) return { success: false, error: 'El tipo de tarea es obligatorio.' }
@@ -153,7 +159,7 @@ export async function updateCatTipoTareaAction(
   tipo_tarea: string,
   input: { activo?: boolean }
 ): Promise<ActionResult<CatTipoTarea>> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
@@ -166,7 +172,7 @@ export async function updateCatTipoTareaAction(
 }
 
 export async function deleteCatTipoTareaAction(tipo_tarea: string): Promise<ActionResult> {
-  const check = await requireSupervisor()
+  const check = await requireCatalogEditor()
   if ('error' in check) return { success: false, error: check.error! }
 
   try {
