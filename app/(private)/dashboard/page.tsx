@@ -51,7 +51,7 @@ export default async function DashboardPage({ searchParams }: Props) {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard Ejecutivo</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Vista gerencial del estado del área QA · {formatDate(new Date().toISOString())}
+            Vista gerencial del estado del área QA · {formatDate(new Date().toISOString().slice(0, 10))}
           </p>
         </div>
       </div>
@@ -79,7 +79,7 @@ export default async function DashboardPage({ searchParams }: Props) {
       registros={registrosHoras}
       analistas={analistasHoras}
       aplicativos={aplicativosHoras}
-      fecha={formatDate(new Date().toISOString())}
+      fecha={formatDate(new Date().toISOString().slice(0, 10))}
     />
   ) : null
 

@@ -357,32 +357,37 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
               <p className="text-sm text-white/70">Basado en la Bitácora de Actividades (Registro Diario)</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-2 ring-1 ring-white/20 backdrop-blur-sm">
-            <CalendarDays className="h-5 w-5 shrink-0 text-white/80" />
-            <div className="leading-tight">
-              <p className="text-[9px] font-semibold uppercase tracking-widest text-white/60">Período</p>
-              <p className="text-sm font-bold text-white/95">{fPeriodo || 'Todos los períodos'}</p>
-              <p className="text-[10px] text-white/60">Actualizado {fecha}</p>
+          <div className="flex flex-col items-end gap-1">
+            <div className="flex items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 ring-1 ring-white/20 backdrop-blur-sm">
+              <CalendarDays className="h-4 w-4 shrink-0 text-white/80" />
+              <div className="leading-tight">
+                <label className="block text-[9px] font-semibold uppercase tracking-widest text-white/60">Período</label>
+                <div className="relative">
+                  <select
+                    value={fPeriodo}
+                    onChange={(e) => setFPeriodo(e.target.value)}
+                    className="w-full cursor-pointer appearance-none bg-transparent pr-6 text-sm font-bold text-white outline-none"
+                  >
+                    <option value="" className="text-slate-800">Todos los períodos</option>
+                    {periodosDisponibles.map((p) => <option key={p} value={p} className="text-slate-800">{p}</option>)}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-0 top-1/2 h-4 w-4 -translate-y-1/2 text-white/70" />
+                </div>
+              </div>
             </div>
+            <span className="text-[10px] text-white/50">Actualizado {fecha}</span>
           </div>
         </div>
       </div>
 
       {/* ═══ FILTROS (sticky) ═══ */}
       <div className="sticky top-0 z-20 rounded-2xl border border-slate-200/70 bg-white/85 p-3 shadow-sm backdrop-blur-md">
-        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-4">
           <div>
             <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-400">Analista</label>
             <select value={fAnalista} onChange={(e) => setFAnalista(e.target.value)} className={inputCls}>
               <option value="">Todos</option>
               {analistas.map((a) => <option key={a.id} value={a.id}>{a.full_name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-slate-400">Período</label>
-            <select value={fPeriodo} onChange={(e) => setFPeriodo(e.target.value)} className={inputCls}>
-              <option value="">Todos</option>
-              {periodosDisponibles.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div>
