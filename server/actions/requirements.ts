@@ -162,10 +162,13 @@ export async function addIterationAction(
       .limit(1)
       .maybeSingle()
 
-    if (lastIter && lastIter.estado_qa !== 'TERMINADO' && lastIter.estado_qa !== 'CANCELADO') {
+    // Estados de la última iteración que habilitan crear una nueva.
+    const ESTADOS_NUEVA_ITER: EstadoQaEnum[] = ['EN_PRUEBAS_QA', 'TERMINADO', 'CANCELADO']
+    if (lastIter && !ESTADOS_NUEVA_ITER.includes(lastIter.estado_qa as EstadoQaEnum)) {
+      const permitidos = ESTADOS_NUEVA_ITER.map((e) => ESTADO_QA_LABELS[e]).join(', ')
       return {
         success: false,
-        error: `La iteración ${lastIter.iteracion} debe estar en estado TERMINADO o CANCELADO antes de crear una nueva.`,
+        error: `La iteración ${lastIter.iteracion} debe estar en uno de estos estados: ${permitidos}, antes de crear una nueva.`,
       }
     }
 

@@ -53,7 +53,7 @@ export function ActividadCard({ actividad, aplicativos, onDragStart, onClick }: 
         )}
         {actividad.iteracion_num != null && (
           <span className="inline-flex items-center rounded-full bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">
-            Interacción {actividad.iteracion_num}
+            Iteración {actividad.iteracion_num}
           </span>
         )}
       </div>

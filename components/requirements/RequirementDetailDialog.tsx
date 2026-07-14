@@ -305,7 +305,7 @@ export function RequirementDetailDialog({
           <div className="flex items-center gap-4 flex-wrap">
             {/* Circles — kept exactly as before */}
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-slate-400 font-medium">Interacciones:</span>
+              <span className="text-xs text-slate-400 font-medium">Iteraciones:</span>
               {localIters.map((it, idx) => (
                 <button
                   key={it.id}
@@ -325,7 +325,7 @@ export function RequirementDetailDialog({
                   className="flex items-center gap-1 rounded-full border border-dashed border-slate-300 px-3 py-1 text-xs text-slate-400 hover:border-blue-400 hover:text-blue-500 transition-colors disabled:opacity-50"
                 >
                   <Plus className="h-3 w-3" />
-                  Nueva Interacción
+                  Nueva Iteración
                 </button>
               )}
             </div>
