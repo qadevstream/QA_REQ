@@ -69,6 +69,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
   )
   const [registros, setRegistros] = useState(initialRegistros)
+  const [filtroQaId, setFiltroQaId] = useState('')
   const [form, setForm] = useState<FormState>({ ...EMPTY, qa_id: currentUserId })
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDelete] = useTransition()
@@ -95,8 +96,6 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
           const row = payload.new as Record<string, unknown>
           // Ignorar inserts propios (ya se manejan de forma optimista)
           if (row.created_by === currentUserId) return
-          // ANALISTA_QA solo ve sus propios registros
-          if (!isSupervisor && row.qa_id !== currentUserId) return
 
           const qa = analistasRef.current.find((a) => a.id === row.qa_id) ?? null
           const nuevo = { ...row, qa } as unknown as typeof registros[0]
@@ -117,7 +116,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [currentUserId, isSupervisor])
+  }, [currentUserId])
 
   const setField = (field: keyof FormState) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
@@ -256,7 +255,19 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     })
   }
 
-  const totalHoras = registros.reduce((sum, r) => sum + r.horas_ejecutadas, 0)
+  // Opciones del filtro por QA: analistas presentes en los registros visibles.
+  const qaOptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const r of registros) {
+      if (r.qa_id && r.qa?.full_name) map.set(r.qa_id, r.qa.full_name)
+    }
+    return [...map.entries()]
+      .map(([id, full_name]) => ({ id, full_name }))
+      .sort((a, b) => a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' }))
+  }, [registros])
+
+  const registrosFiltrados = filtroQaId ? registros.filter((r) => r.qa_id === filtroQaId) : registros
+  const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas_ejecutadas, 0)
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -267,6 +278,12 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
             <p className="text-muted-foreground text-sm mt-1">Bitácora de actividades del equipo QA</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="w-52">
+              <Select value={filtroQaId} onChange={(e) => setFiltroQaId(e.target.value)}>
+                <option value="">Todos los QA</option>
+                {qaOptions.map((q) => <option key={q.id} value={q.id}>{q.full_name}</option>)}
+              </Select>
+            </div>
             {isSupervisor && (
               <button
                 onClick={() => setImportOpen(true)}
@@ -276,7 +293,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
               </button>
             )}
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-              {registros.length} registro{registros.length !== 1 ? 's' : ''} · {totalHoras.toFixed(2)} h
+              {registrosFiltrados.length} registro{registrosFiltrados.length !== 1 ? 's' : ''} · {totalHoras.toFixed(2)} h
             </span>
           </div>
         </div>
@@ -351,13 +368,17 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
         </datalist>
 
         {/* Tabla de registros */}
-        {registros.length === 0 ? (
+        {registrosFiltrados.length === 0 ? (
           <div className="rounded-xl border-2 border-dashed border-slate-200 bg-white py-16 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100">
               <ClipboardList className="h-8 w-8 text-slate-300" />
             </div>
-            <p className="text-sm font-semibold text-slate-500">Sin actividades registradas</p>
-            <p className="mt-1 text-xs text-slate-400">Usa el formulario de arriba para agregar tu primera actividad.</p>
+            <p className="text-sm font-semibold text-slate-500">
+              {filtroQaId ? 'Sin actividades para este QA' : 'Sin actividades registradas'}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              {filtroQaId ? 'Prueba con otro QA o quita el filtro.' : 'Usa el formulario de arriba para agregar tu primera actividad.'}
+            </p>
           </div>
         ) : (
           <div className="flex-1 min-h-0 rounded-xl border border-slate-200 bg-white shadow-sm overflow-x-auto overflow-y-auto">
@@ -380,7 +401,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {registros.map((r) => (
+                {registrosFiltrados.map((r) => (
                   <tr key={r.id} className="hover:bg-slate-50/70 group">
                     <td className="px-3 py-2 text-center">{r.periodo}</td>
                     <td className="px-3 py-2 text-center">{r.iteracion ?? '—'}</td>
@@ -395,21 +416,23 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                     <td className="px-3 py-2 text-center whitespace-nowrap">{formatDate(r.fecha_reporte)}</td>
                     <td className="px-3 py-2 text-left max-w-[200px] truncate">{r.observaciones ?? '—'}</td>
                     <td className="px-3 py-2 text-center">
-                      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 justify-center">
-                        <button
-                          onClick={() => openEdit(r)}
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          onClick={() => setPendingDeleteId(r.id)}
-                          disabled={isDeleting}
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
+                      {(isSupervisor || r.qa_id === currentUserId || r.created_by === currentUserId) && (
+                        <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 justify-center">
+                          <button
+                            onClick={() => openEdit(r)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-blue-50 hover:text-blue-500 transition-all"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setPendingDeleteId(r.id)}
+                            disabled={isDeleting}
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-slate-400 hover:bg-red-50 hover:text-red-500 transition-all disabled:opacity-50"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

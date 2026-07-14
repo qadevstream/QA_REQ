@@ -17,7 +17,7 @@ export default async function ActividadesPage() {
   const isSupervisor = session.profile.role === 'SUPERVISOR' || session.profile.role === 'ADMINISTRADOR'
 
   const [registros, analistas, aplicativos, tiposTarea, requirements] = await Promise.all([
-    findAllRegistroDiario(isSupervisor ? {} : { qa_id: session.userId }),
+    findAllRegistroDiario({}),
     findAnalistas(),
     findAllAplicativos(),
     findAllCatTipoTareas(),
