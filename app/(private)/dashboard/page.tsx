@@ -4,12 +4,16 @@ import { getDashboardMetrics } from '@/server/usecases/getDashboardMetrics'
 import { getResumenGestion } from '@/server/usecases/getResumenGestion'
 import { getTendenciaDiaria } from '@/server/usecases/getTendenciaDiaria'
 import { getCurrentUser } from '@/server/actions/auth'
+import { findAllRegistroDiario } from '@/server/repositories/registroDiario.repository'
+import { findAnalistas } from '@/server/repositories/profiles.repository'
+import { findAllAplicativos } from '@/server/repositories/aplicativosCatalogo.repository'
 import { KPIGrid } from '@/components/dashboard/KPIGrid'
 import { ChartByStatus } from '@/components/dashboard/ChartByStatus'
 import { ChartByQA } from '@/components/dashboard/ChartByQA'
 import { ChartByApp } from '@/components/dashboard/ChartByApp'
 import { ChartTendencia } from '@/components/dashboard/ChartTendencia'
 import { ResumenGestionDashboard } from '@/components/dashboard/ResumenGestionDashboard'
+import { ControlHorasDashboard } from '@/components/dashboard/ControlHorasDashboard'
 import { DashboardTabs } from '@/components/dashboard/DashboardTabs'
 import { formatDate } from '@/lib/utils'
 
@@ -29,10 +33,13 @@ export default async function DashboardPage({ searchParams }: Props) {
   const year  = params.year  ? parseInt(params.year)  : undefined
   const month = params.month ? parseInt(params.month) : undefined
 
-  const [metrics, resumen, tendencia] = await Promise.all([
+  const [metrics, resumen, tendencia, registrosHoras, analistasHoras, aplicativosHoras] = await Promise.all([
     getDashboardMetrics(),
     getResumenGestion(year, month),
     getTendenciaDiaria(),
+    findAllRegistroDiario({}),
+    findAnalistas(),
+    findAllAplicativos(),
   ])
 
   const dashboard1 = (
@@ -64,12 +71,22 @@ export default async function DashboardPage({ searchParams }: Props) {
     />
   )
 
+  const dashboard3 = (
+    <ControlHorasDashboard
+      registros={registrosHoras}
+      analistas={analistasHoras}
+      aplicativos={aplicativosHoras}
+      fecha={formatDate(new Date().toISOString())}
+    />
+  )
+
   return (
     <div className="px-8 py-6">
       <DashboardTabs
         dashboard1={dashboard1}
         dashboard2={dashboard2}
-        defaultTab={params.tab ?? '1'}
+        dashboard3={dashboard3}
+        defaultTab={params.tab ?? 'op'}
       />
     </div>
   )
