@@ -8,17 +8,21 @@ interface Props {
   dashboard2: React.ReactNode
   dashboard3: React.ReactNode
   defaultTab: string
+  /** El tab "Dashboard Operativo QA" solo lo ven Analista QA y Administrador. */
+  showOperativo: boolean
 }
 
-// Pestañas del Dashboard. 'op' = nueva vista Operativo QA (default),
+// Pestañas del Dashboard. 'op' = vista Operativo QA (solo Analista/Admin),
 // '1' = Dashboard Ejecutivo, '2' = Resumen de Gestión.
 // Nota: Resumen de Gestión depende de tab '2' para su selector de período,
 // por eso se conservan esos ids.
-export function DashboardTabs({ dashboard1, dashboard2, dashboard3, defaultTab }: Props) {
+export function DashboardTabs({ dashboard1, dashboard2, dashboard3, defaultTab, showOperativo }: Props) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tab = searchParams.get('tab') ?? defaultTab
-  const active = tab === '1' ? 'ejecutivo' : tab === '2' ? 'resumen' : 'operativo'
+  let active = tab === '1' ? 'ejecutivo' : tab === '2' ? 'resumen' : 'operativo'
+  // Si no tiene permiso al Operativo, cae al Ejecutivo (aunque llegue con ?tab=op).
+  if (active === 'operativo' && !showOperativo) active = 'ejecutivo'
 
   function setTab(t: string) {
     const p = new URLSearchParams(searchParams.toString())
@@ -35,10 +39,12 @@ export function DashboardTabs({ dashboard1, dashboard2, dashboard3, defaultTab }
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1 border-b border-slate-200">
-        <button onClick={() => setTab('op')} className={tabClass(active === 'operativo')}>
-          <Gauge className="h-4 w-4" />
-          Dashboard Operativo QA
-        </button>
+        {showOperativo && (
+          <button onClick={() => setTab('op')} className={tabClass(active === 'operativo')}>
+            <Gauge className="h-4 w-4" />
+            Dashboard Operativo QA
+          </button>
+        )}
         <button onClick={() => setTab('1')} className={tabClass(active === 'ejecutivo')}>
           <BarChart2 className="h-4 w-4" />
           Dashboard Ejecutivo

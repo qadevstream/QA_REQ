@@ -29,6 +29,9 @@ export default async function DashboardPage({ searchParams }: Props) {
   if (!session) redirect('/login')
   if (session.profile.role === 'CLIENTE') redirect('/requirements')
 
+  // El Dashboard Operativo QA (Control de Horas) solo lo ven Analista QA y Administrador.
+  const canVerOperativo = session.profile.role === 'ANALISTA_QA' || session.profile.role === 'ADMINISTRADOR'
+
   const params = await searchParams
   const year  = params.year  ? parseInt(params.year)  : undefined
   const month = params.month ? parseInt(params.month) : undefined
@@ -71,14 +74,14 @@ export default async function DashboardPage({ searchParams }: Props) {
     />
   )
 
-  const dashboard3 = (
+  const dashboard3 = canVerOperativo ? (
     <ControlHorasDashboard
       registros={registrosHoras}
       analistas={analistasHoras}
       aplicativos={aplicativosHoras}
       fecha={formatDate(new Date().toISOString())}
     />
-  )
+  ) : null
 
   return (
     <div className="px-8 py-6">
@@ -86,7 +89,8 @@ export default async function DashboardPage({ searchParams }: Props) {
         dashboard1={dashboard1}
         dashboard2={dashboard2}
         dashboard3={dashboard3}
-        defaultTab={params.tab ?? 'op'}
+        defaultTab={params.tab ?? (canVerOperativo ? 'op' : '1')}
+        showOperativo={canVerOperativo}
       />
     </div>
   )

@@ -12,6 +12,7 @@ import {
   HEADER_GRADIENT, HEADER_GLASS, BAR_FILL, BRAND, KPI_ACCENTS, type KpiAccent,
 } from '@/lib/dashboardTheme'
 import { META_CONFIG, TIPO_PALETTE, cumplimientoAccent } from '@/lib/controlHoras'
+import { PERIODOS } from '@/lib/constants'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmtH = (n: number) => n.toFixed(2)
@@ -193,10 +194,18 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
     return m
   }, [aplicativos])
 
-  const periodosDisponibles = useMemo(
-    () => [...new Set(registros.map((r) => r.periodo).filter(Boolean))],
-    [registros],
-  )
+  // Orden cronológico de los períodos usando el catálogo PERIODOS (fecha "from").
+  const periodoDesde = useMemo(() => {
+    const m = new Map<string, string>()
+    PERIODOS.forEach((p) => m.set(p.value, p.from))
+    return m
+  }, [])
+
+  const periodosDisponibles = useMemo(() => {
+    const set = [...new Set(registros.map((r) => r.periodo).filter(Boolean))] as string[]
+    // Más reciente primero.
+    return set.sort((a, b) => (periodoDesde.get(b) ?? b).localeCompare(periodoDesde.get(a) ?? a))
+  }, [registros, periodoDesde])
   const ticketsDisponibles = useMemo(
     () => [...new Set(registros.map((r) => r.nro_ticket).filter(Boolean))] as string[],
     [registros],
@@ -348,9 +357,13 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
               <p className="text-sm text-white/70">Basado en la Bitácora de Actividades (Registro Diario)</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 ring-1 ring-white/20 backdrop-blur-sm">
-            <CalendarDays className="h-4 w-4 text-white/80" />
-            <span className="text-xs font-semibold text-white/90">{fecha}</span>
+          <div className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-2 ring-1 ring-white/20 backdrop-blur-sm">
+            <CalendarDays className="h-5 w-5 shrink-0 text-white/80" />
+            <div className="leading-tight">
+              <p className="text-[9px] font-semibold uppercase tracking-widest text-white/60">Período</p>
+              <p className="text-sm font-bold text-white/95">{fPeriodo || 'Todos los períodos'}</p>
+              <p className="text-[10px] text-white/60">Actualizado {fecha}</p>
+            </div>
           </div>
         </div>
       </div>
