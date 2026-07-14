@@ -163,7 +163,7 @@ export async function addIterationAction(
       .maybeSingle()
 
     // Estados de la última iteración que habilitan crear una nueva.
-    const ESTADOS_NUEVA_ITER: EstadoQaEnum[] = ['EN_PRUEBAS_QA', 'TERMINADO', 'CANCELADO']
+    const ESTADOS_NUEVA_ITER: EstadoQaEnum[] = ['EN_PRUEBAS_QA', 'TERMINADO_CON_OBS', 'TERMINADO', 'CANCELADO']
     if (lastIter && !ESTADOS_NUEVA_ITER.includes(lastIter.estado_qa as EstadoQaEnum)) {
       const permitidos = ESTADOS_NUEVA_ITER.map((e) => ESTADO_QA_LABELS[e]).join(', ')
       return {
