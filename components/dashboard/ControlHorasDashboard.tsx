@@ -326,7 +326,9 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
   }, [rows])
 
   const detalle = useMemo(
-    () => [...rows].sort((a, b) => b.horas_ejecutadas - a.horas_ejecutadas).slice(0, 10),
+    () => [...rows]
+      .sort((a, b) => b.fecha_reporte.localeCompare(a.fecha_reporte) || b.horas_ejecutadas - a.horas_ejecutadas)
+      .slice(0, 10),
     [rows],
   )
 
@@ -554,7 +556,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
       </PanelCard>
 
       {/* ═══ Detalle de registros ═══ */}
-      <PanelCard title="Detalle de registros" subtitle="Top 10 por consumo de horas" icon={ClipboardList}>
+      <PanelCard title="Detalle de registros" subtitle="Últimos 10 registros (fecha descendente)" icon={ClipboardList}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-xs">
             <thead>
@@ -587,7 +589,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">Visualización limitada a Top 10 registros con mayor consumo de horas</p>
+        <p className="mt-2 text-[11px] text-slate-400">Visualización limitada a los 10 registros más recientes</p>
       </PanelCard>
     </div>
   )
