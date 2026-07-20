@@ -142,9 +142,13 @@ export function ImportRegistroDiarioDialog({
 
   // Genera y descarga la plantilla (.xlsx) con la hoja "Data", las cabeceras
   // que reconoce el importador y una fila de ejemplo para guiar el llenado.
+  //
+  // Usa xlsx-js-style (no 'xlsx') porque SheetJS Community Edition descarta
+  // los estilos de celda al escribir — el fondo, color de fuente y alineación
+  // solo existen en su versión Pro. La API es la misma; el fork sí los emite.
   async function handleDownloadTemplate() {
     try {
-      const XLSX = await import('xlsx')
+      const XLSX = await import('xlsx-js-style')
       const headers = [
         'Período', 'Iteración', 'Aplicación', 'Código App', 'Tipo de Solicitud',
         'Tipo de Tarea', 'Horas Ejecutadas', 'Perfil', 'Nro de Ticket', 'Fecha de Reporte', 'Observaciones',
@@ -156,7 +160,27 @@ export function ImportRegistroDiarioDialog({
         '[GSTI] Ejecución de Pruebas', 8, 'EP11', '19535', '2025-07-15', 'Fila de ejemplo — reemplázala',
       ]
       const ws = XLSX.utils.aoa_to_sheet([headers, ejemplo])
+
+      const headerStyle = {
+        fill: { patternType: 'solid', fgColor: { rgb: '1F3864' } },
+        font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { bottom: { style: 'thin', color: { rgb: '1F3864' } } },
+      }
+      const bodyStyle = { alignment: { horizontal: 'center', vertical: 'center' } }
+
+      // Cabecera con fondo azul y letra blanca; todos los campos centrados.
+      const range = XLSX.utils.decode_range(ws['!ref']!)
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })]
+          if (cell) cell.s = R === 0 ? headerStyle : bodyStyle
+        }
+      }
+
       ws['!cols'] = headers.map(() => ({ wch: 20 }))
+      ws['!rows'] = [{ hpt: 24 }]
+
       const wb = XLSX.utils.book_new()
       XLSX.utils.book_append_sheet(wb, ws, 'Data')
       XLSX.writeFile(wb, 'matriz_carga_registro_horas.xlsx')
