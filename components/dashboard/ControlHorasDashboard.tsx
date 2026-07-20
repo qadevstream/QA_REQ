@@ -186,7 +186,7 @@ function LineRealMeta({ dias, meta }: { dias: { fecha: string; horas: number }[]
         {dias.map((d, i) => <circle key={i} cx={x(i)} cy={y(d.horas)} r="3" fill={BRAND.navy} />)}
         {/* horas en cada punto */}
         {dias.map((d, i) => (
-          <text key={`h${i}`} x={x(i)} y={y(d.horas) - 9} textAnchor="middle" fontSize="8.5"
+          <text key={`h${i}`} x={x(i)} y={y(d.horas) - 9} textAnchor="middle" fontSize="7.5"
             fill="#64748b" className="tabular-nums font-semibold">
             {d.horas.toFixed(2)}
           </text>
