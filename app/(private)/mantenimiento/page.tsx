@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/server/actions/auth'
 import { findAllAplicativos } from '@/server/repositories/aplicativosCatalogo.repository'
 import { findAllCatTipoTareas } from '@/server/repositories/catTipoTarea.repository'
+import { findAllFeriados } from '@/server/repositories/feriados.repository'
 import { AplicativosCatalogoManager } from '@/components/mantenimiento/AplicativosCatalogoManager'
 import { CatTipoTareaManager } from '@/components/mantenimiento/CatTipoTareaManager'
+import { FeriadosManager } from '@/components/mantenimiento/FeriadosManager'
 
 export const metadata: Metadata = { title: 'Mantenimiento' }
 
@@ -13,9 +15,10 @@ export default async function MantenimientoPage() {
   if (!session) redirect('/login')
   if (session.profile.role === 'CLIENTE') redirect('/requirements')
 
-  const [aplicativos, catTipoTareas] = await Promise.all([
+  const [aplicativos, catTipoTareas, feriados] = await Promise.all([
     findAllAplicativos(false),
     findAllCatTipoTareas(false),
+    findAllFeriados(false),
   ])
 
   return (
@@ -30,6 +33,7 @@ export default async function MantenimientoPage() {
         <AplicativosCatalogoManager initialAplicativos={aplicativos} />
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <CatTipoTareaManager initialItems={catTipoTareas} />
+          <FeriadosManager initialItems={feriados} />
         </div>
       </div>
     </div>

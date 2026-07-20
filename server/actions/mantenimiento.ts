@@ -16,8 +16,13 @@ import {
   updateCatTipoTarea,
   deleteCatTipoTarea,
 } from '@/server/repositories/catTipoTarea.repository'
+import {
+  createFeriado,
+  updateFeriado,
+  deleteFeriado,
+} from '@/server/repositories/feriados.repository'
 import { getCurrentUser } from '@/server/actions/auth'
-import type { ActionResult, AplicativoCatalogo, CatAplicativo, CatTipoTarea } from '@/types/domain.types'
+import type { ActionResult, AplicativoCatalogo, CatAplicativo, CatTipoTarea, CatFeriado } from '@/types/domain.types'
 
 // Pueden modificar los catálogos de Mantenimiento: Supervisor, Administrador
 // y Analista QA. El Cliente queda excluido. La RLS (migración 036) refleja
@@ -178,6 +183,83 @@ export async function deleteCatTipoTareaAction(tipo_tarea: string): Promise<Acti
   try {
     await deleteCatTipoTarea(tipo_tarea)
     revalidatePath('/mantenimiento')
+    return { success: true, data: undefined }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+}
+
+// ── cat_feriados ──────────────────────────────────────────────────
+// Cambiar un feriado mueve la meta de horas del período que contiene su
+// fecha, así que también se revalida el dashboard.
+
+function revalidarFeriados() {
+  revalidatePath('/mantenimiento')
+  revalidatePath('/dashboard')
+}
+
+export async function createFeriadoAction(
+  input: { fecha: string; nombre: string; horas?: number }
+): Promise<ActionResult<CatFeriado>> {
+  const check = await requireCatalogEditor()
+  if ('error' in check) return { success: false, error: check.error! }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.fecha)) {
+    return { success: false, error: 'La fecha es obligatoria (formato AAAA-MM-DD).' }
+  }
+  if (!input.nombre.trim()) return { success: false, error: 'El nombre del feriado es obligatorio.' }
+
+  const horas = input.horas ?? 8
+  if (!(horas > 0 && horas <= 24)) {
+    return { success: false, error: 'Las horas deben estar entre 0 y 24.' }
+  }
+
+  try {
+    const data = await createFeriado({
+      fecha: input.fecha,
+      nombre: input.nombre.trim(),
+      horas,
+      activo: true,
+    })
+    revalidarFeriados()
+    return { success: true, data, message: 'Feriado agregado.' }
+  } catch (e) {
+    const msg = (e as Error).message
+    // La fecha es PK: un duplicado es lo más probable que falle acá.
+    if (msg.includes('duplicate') || msg.includes('23505')) {
+      return { success: false, error: 'Ya existe un feriado registrado en esa fecha.' }
+    }
+    return { success: false, error: msg }
+  }
+}
+
+export async function updateFeriadoAction(
+  fecha: string,
+  input: { nombre?: string; horas?: number; activo?: boolean }
+): Promise<ActionResult<CatFeriado>> {
+  const check = await requireCatalogEditor()
+  if ('error' in check) return { success: false, error: check.error! }
+
+  if (input.horas !== undefined && !(input.horas > 0 && input.horas <= 24)) {
+    return { success: false, error: 'Las horas deben estar entre 0 y 24.' }
+  }
+
+  try {
+    const data = await updateFeriado(fecha, input)
+    revalidarFeriados()
+    return { success: true, data }
+  } catch (e) {
+    return { success: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteFeriadoAction(fecha: string): Promise<ActionResult> {
+  const check = await requireCatalogEditor()
+  if ('error' in check) return { success: false, error: check.error! }
+
+  try {
+    await deleteFeriado(fecha)
+    revalidarFeriados()
     return { success: true, data: undefined }
   } catch (e) {
     return { success: false, error: (e as Error).message }

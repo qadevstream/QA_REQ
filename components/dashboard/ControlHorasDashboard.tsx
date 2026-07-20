@@ -7,11 +7,11 @@ import {
   ChevronDown, Table2, ClipboardList,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import type { RegistroDiario, Profile, AplicativoCatalogo } from '@/types/domain.types'
+import type { RegistroDiario, Profile, AplicativoCatalogo, CatFeriado } from '@/types/domain.types'
 import {
   HEADER_GRADIENT, HEADER_GLASS, BAR_FILL, BRAND, KPI_ACCENTS, type KpiAccent,
 } from '@/lib/dashboardTheme'
-import { META_CONFIG, TIPO_PALETTE, cumplimientoAccent } from '@/lib/controlHoras'
+import { META_CONFIG, TIPO_PALETTE, cumplimientoAccent, calcularMetaPeriodo } from '@/lib/controlHoras'
 import { PERIODOS } from '@/lib/constants'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -177,10 +177,11 @@ interface Props {
   registros: RegistroDiario[]
   analistas: Profile[]
   aplicativos: AplicativoCatalogo[]
+  feriados: CatFeriado[]
   fecha: string
 }
 
-export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha }: Props) {
+export function ControlHorasDashboard({ registros, analistas, aplicativos, feriados, fecha }: Props) {
   const [fAnalista, setFAnalista] = useState('')
   const [fPeriodo, setFPeriodo] = useState('')
   const [fTicket, setFTicket] = useState('')
@@ -259,7 +260,17 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
       .map(([ticket, horas]) => ({ ticket, horas })).sort((a, b) => b.horas - a.horas)
 
     const numAnalistas = new Set(rows.map((r) => r.qa_id).filter(Boolean)).size || 1
-    const metaMensual = META_CONFIG.mensualPorAnalista * numAnalistas
+
+    // La meta sale de los días hábiles reales de cada período presente en los
+    // datos filtrados, descontando feriados. Con un período seleccionado es el
+    // de ese período; sin filtro, la suma de todos los que aparecen.
+    const periodosEnRows = [...new Set(rows.map((r) => r.periodo).filter(Boolean))] as string[]
+    const metas = periodosEnRows.map((p) => calcularMetaPeriodo(p, feriados))
+    const horasPorAnalista = metas.reduce((s, m) => s + m.horasPorAnalista, 0)
+    const diasHabiles = metas.reduce((s, m) => s + m.diasHabiles, 0)
+    const feriadosDelRango = metas.flatMap((m) => m.feriados)
+
+    const metaMensual = horasPorAnalista * numAnalistas
     const cumplimiento = metaMensual > 0 ? (totalHoras / metaMensual) * 100 : 0
     const horasFaltantes = Math.max(0, metaMensual - totalHoras)
 
@@ -274,7 +285,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
 
     const diasConRegistro = dias.length || 1
     const promedioDiario = totalHoras / diasConRegistro
-    const proyeccionEstimada = promedioDiario * META_CONFIG.diasHabiles
+    const proyeccionEstimada = promedioDiario * diasHabiles
     const proyeccionCierre = metaMensual > 0 ? (proyeccionEstimada / metaMensual) * 100 : 0
     const metaDiariaEquipo = META_CONFIG.diariaPorAnalista * numAnalistas
 
@@ -282,8 +293,9 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
       totalHoras, porAnalista, porApp, porTipo, dias, tickets,
       numAnalistas, metaMensual, cumplimiento, horasFaltantes, horasExtra,
       promedioDiario, proyeccionEstimada, proyeccionCierre, metaDiariaEquipo,
+      horasPorAnalista, diasHabiles, feriadosDelRango,
     }
-  }, [rows, appNombre])
+  }, [rows, appNombre, feriados])
 
   // ── Matriz jerárquica: analista → ticket → tipo tarea × fecha ──
   const matriz = useMemo(() => {
@@ -413,7 +425,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
       {/* ═══ KPIs ═══ */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         <KpiTile title="Horas ejecutadas" value={fmtH(agg.totalHoras)} unit="h" description="Acumulado" icon={Clock} accent="info" />
-        <KpiTile title="Meta mensual" value={agg.metaMensual} unit="h" description={`${META_CONFIG.mensualPorAnalista} × ${agg.numAnalistas} analista(s)`} icon={Target} accent="info" />
+        <KpiTile title="Meta mensual" value={fmtH(agg.metaMensual)} unit="h" description={`${fmtH(agg.horasPorAnalista)} h × ${agg.numAnalistas} analista(s)`} icon={Target} accent="info" />
         <div className="group relative overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
           style={{ borderColor: `${cColor.bar}55`, backgroundColor: cColor.chip }}>
           <span className="absolute inset-y-0 left-0 w-1.5" style={{ backgroundColor: cColor.bar }} />
@@ -432,8 +444,13 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
         <KpiTile title="Horas extra" value={fmtH(agg.horasExtra)} unit="h" description="Sobre meta diaria" icon={Zap} accent="success" />
       </div>
       <p className="-mt-1 px-1 text-[11px] text-slate-400">
-        ⚙️ Meta y proyecciones usan valores de configuración (placeholder): {META_CONFIG.mensualPorAnalista} h/analista/mes ·
-        {' '}{META_CONFIG.diariaPorAnalista} h/día · {META_CONFIG.diasHabiles} días hábiles. Ajustables al confirmar las reglas.
+        ⚙️ Meta = {agg.diasHabiles} día(s) hábil(es) × {META_CONFIG.diariaPorAnalista} h × {agg.numAnalistas} analista(s).
+        {agg.feriadosDelRango.length > 0 ? (
+          <> Descuenta {agg.feriadosDelRango.length} feriado(s): {agg.feriadosDelRango.map((f) => f.nombre).join(', ')}.</>
+        ) : (
+          <> Sin feriados en el rango.</>
+        )}
+        {' '}Los feriados se administran en Mantenimiento.
       </p>
 
       {/* ═══ Fila: Horas por analista + Semáforo ═══ */}
@@ -449,7 +466,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, fecha
             <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Proyección estimada</p>
               <p className="text-xl font-bold text-slate-800">{fmtH(agg.proyeccionEstimada)} h</p>
-              <p className="text-[11px] text-slate-400">Promedio diario × {META_CONFIG.diasHabiles} días hábiles</p>
+              <p className="text-[11px] text-slate-400">Promedio diario × {agg.diasHabiles} días hábiles</p>
             </div>
           </div>
         </PanelCard>

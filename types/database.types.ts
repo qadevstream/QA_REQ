@@ -302,6 +302,22 @@ export type Database = {
         Update: Partial<Database['public']['Tables']['cat_tipo_tarea']['Insert']>
         Relationships: []
       }
+      cat_feriados: {
+        Row: {
+          fecha: string
+          nombre: string
+          horas: number
+          activo: boolean
+        }
+        Insert: {
+          fecha: string
+          nombre: string
+          horas?: number
+          activo?: boolean
+        }
+        Update: Partial<Database['public']['Tables']['cat_feriados']['Insert']>
+        Relationships: []
+      }
       actividad_estado_historial: {
         Row: {
           id: string

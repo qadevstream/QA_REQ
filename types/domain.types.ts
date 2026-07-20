@@ -36,6 +36,15 @@ export interface CatTipoTarea {
   orden: number
 }
 
+// Feriado que reduce los días hábiles del período que contiene su fecha.
+// `horas` es lo que descuenta de la jornada: 8 = día completo, 4 = medio día.
+export interface CatFeriado {
+  fecha: string   // 'YYYY-MM-DD'
+  nombre: string
+  horas: number
+  activo: boolean
+}
+
 export interface Profile {
   id: string
   full_name: string
