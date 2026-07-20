@@ -126,26 +126,71 @@ function Donut({ items }: { items: { label: string; value: number; color: string
   )
 }
 
+// Interpolación cúbica monótona (Fritsch–Carlson): suaviza la línea sin que
+// la curva se pase de los valores reales. Una spline normal (Catmull-Rom)
+// haría "panza" y en una caída fuerte —como la del 10 Jul— dibujaría horas
+// por debajo de las que realmente se registraron.
+function pathSuave(pts: { x: number; y: number }[]): string {
+  const n = pts.length
+  if (n === 0) return ''
+  if (n === 1) return `M${pts[0].x},${pts[0].y}`
+  if (n === 2) return `M${pts[0].x},${pts[0].y} L${pts[1].x},${pts[1].y}`
+
+  const dx: number[] = [], pend: number[] = []
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = pts[i + 1].x - pts[i].x
+    pend[i] = (pts[i + 1].y - pts[i].y) / dx[i]
+  }
+
+  const m: number[] = [pend[0]]
+  for (let i = 1; i < n - 1; i++) {
+    // Si la pendiente cambia de signo, la tangente se aplana: eso es lo que
+    // impide el sobretiro en los picos y valles.
+    if (pend[i - 1] * pend[i] <= 0) { m[i] = 0; continue }
+    const w1 = 2 * dx[i] + dx[i - 1]
+    const w2 = dx[i] + 2 * dx[i - 1]
+    m[i] = (w1 + w2) / (w1 / pend[i - 1] + w2 / pend[i])
+  }
+  m[n - 1] = pend[n - 2]
+
+  let d = `M${pts[0].x},${pts[0].y}`
+  for (let i = 0; i < n - 1; i++) {
+    const t = dx[i] / 3
+    d += ` C${pts[i].x + t},${pts[i].y + m[i] * t} ${pts[i + 1].x - t},${pts[i + 1].y - m[i + 1] * t} ${pts[i + 1].x},${pts[i + 1].y}`
+  }
+  return d
+}
+
 function LineRealMeta({ dias, meta }: { dias: { fecha: string; horas: number }[]; meta: number }) {
-  const W = 560, H = 170, pad = 28
-  const maxY = Math.max(meta, ...dias.map((d) => d.horas), 1) * 1.15
   const n = dias.length
+  // El ancho crece con los puntos para que las etiquetas de horas nunca se
+  // encimen (~34 px por punto). El contenedor tiene scroll horizontal.
+  const W = Math.max(560, n * 34), H = 190, pad = 28
+  const padTop = 34   // aire extra arriba para la etiqueta del punto más alto
+  const maxY = Math.max(meta, ...dias.map((d) => d.horas), 1) * 1.15
   const x = (i: number) => pad + (n <= 1 ? 0 : (i * (W - pad * 2)) / (n - 1))
-  const y = (v: number) => H - pad - (v / maxY) * (H - pad * 2)
-  const realPts = dias.map((d, i) => `${x(i)},${y(d.horas)}`).join(' ')
+  const y = (v: number) => H - pad - (v / maxY) * (H - pad - padTop)
+  const pts = dias.map((d, i) => ({ x: x(i), y: y(d.horas) }))
   if (n === 0) return <p className="py-8 text-center text-xs text-slate-400">Sin datos</p>
   return (
     <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[420px]">
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ minWidth: Math.min(W, 900) }}>
         {[0, 0.5, 1].map((g) => (
-          <line key={g} x1={pad} x2={W - pad} y1={pad + g * (H - pad * 2)} y2={pad + g * (H - pad * 2)}
+          <line key={g} x1={pad} x2={W - pad} y1={padTop + g * (H - pad - padTop)} y2={padTop + g * (H - pad - padTop)}
             stroke="#eef2f7" strokeWidth="1" />
         ))}
         {/* meta */}
         <line x1={pad} x2={W - pad} y1={y(meta)} y2={y(meta)} stroke="#94A3B8" strokeWidth="2" strokeDasharray="5 5" />
         {/* real */}
-        <polyline points={realPts} fill="none" stroke={BRAND.blue} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        <path d={pathSuave(pts)} fill="none" stroke={BRAND.blue} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
         {dias.map((d, i) => <circle key={i} cx={x(i)} cy={y(d.horas)} r="3" fill={BRAND.navy} />)}
+        {/* horas en cada punto */}
+        {dias.map((d, i) => (
+          <text key={`h${i}`} x={x(i)} y={y(d.horas) - 9} textAnchor="middle" fontSize="8.5"
+            fill="#64748b" className="tabular-nums font-semibold">
+            {d.horas.toFixed(2)}
+          </text>
+        ))}
         {dias.map((d, i) => (i % Math.ceil(n / 8 || 1) === 0
           ? <text key={`t${i}`} x={x(i)} y={H - 8} textAnchor="middle" fontSize="8" fill="#94a3b8">{fechaCorta(d.fecha)}</text>
           : null))}
