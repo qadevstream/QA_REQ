@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import {
   Clock, Target, TrendingUp, AlertTriangle, Zap, Gauge, CalendarDays,
   Users, Boxes, PieChart as PieIcon, ListChecks, Search, ChevronRight,
@@ -51,8 +51,11 @@ function PanelCard({ title, subtitle, icon: Icon, children, className = '' }: {
   title: string; subtitle?: string; icon: LucideIcon; children: React.ReactNode; className?: string
 }) {
   return (
-    <div className={`group overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-all duration-300 hover:shadow-lg ${className}`}>
-      <div className="flex items-center gap-2.5 border-b border-slate-100 px-5 py-3">
+    // flex-col + flex-1 permite que el contenido llene el alto que el grid le
+    // da a la tarjeta. min-h-0 es imprescindible: sin él, un hijo con
+    // overflow-y-auto se estira en vez de scrollear.
+    <div className={`group flex flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm transition-all duration-300 hover:shadow-lg ${className}`}>
+      <div className="flex shrink-0 items-center gap-2.5 border-b border-slate-100 px-5 py-3">
         <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ backgroundColor: BRAND.blueSoft }}>
           <Icon className="h-4 w-4" style={{ color: BRAND.blue }} />
         </div>
@@ -61,7 +64,7 @@ function PanelCard({ title, subtitle, icon: Icon, children, className = '' }: {
           {subtitle && <p className="text-[11px] text-slate-400">{subtitle}</p>}
         </div>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="flex-1 p-4">{children}</div>
     </div>
   )
 }
@@ -533,9 +536,13 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
           <LineRealMeta dias={agg.dias} meta={agg.metaDiariaEquipo} />
         </PanelCard>
         <PanelCard title="Tickets con mayor consumo" icon={ListChecks}>
-          <div className="max-h-[240px] space-y-1.5 overflow-y-auto pr-1">
-            {agg.tickets.slice(0, 10).map((t, i) => (
-              <div key={t.ticket} className="flex items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2">
+          {/* Alto FIJO de 5 filas: 5×64px + 4 gaps de 6px = 344px. Fijo y no
+              max-h: así la tarjeta crece hasta este alto y no queda a merced
+              del gráfico vecino, que antes la encogía y recortaba una fila.
+              Del sexto ticket en adelante se llega deslizando. */}
+          <div className="h-[344px] space-y-1.5 overflow-y-auto pr-1">
+            {agg.tickets.slice(0, 15).map((t, i) => (
+              <div key={t.ticket} className="flex h-16 shrink-0 items-center gap-2.5 rounded-lg border border-slate-100 px-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white" style={{ backgroundColor: BRAND.blue }}>{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-semibold text-slate-700">Ticket {t.ticket}</p>
@@ -565,8 +572,11 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
               {matriz.analistas.map((a) => {
                 const aOpen = expAnalistas.has(a.node.key)
                 return (
-                  <>
-                    <tr key={a.node.key} className="border-b border-slate-100 bg-blue-50/40 hover:bg-blue-50">
+                  // La key va en el Fragment, que es el nodo raíz que devuelve
+                  // el map. Ponerla en el <tr> interno no cuenta: React no ve
+                  // una key en el elemento de la lista y no puede reconciliar.
+                  <Fragment key={a.node.key}>
+                    <tr className="border-b border-slate-100 bg-blue-50/40 hover:bg-blue-50">
                       <td className="sticky left-0 z-10 bg-blue-50/70 px-3 py-1.5">
                         <button onClick={() => toggle(expAnalistas, setExpAnalistas, a.node.key)} className="flex items-center gap-1.5 font-bold text-slate-800">
                           {aOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
@@ -578,8 +588,8 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
                     {aOpen && a.tickets.map((t) => {
                       const tOpen = expTickets.has(t.node.key)
                       return (
-                        <>
-                          <tr key={t.node.key} className="border-b border-slate-50 hover:bg-slate-50">
+                        <Fragment key={t.node.key}>
+                          <tr className="border-b border-slate-50 hover:bg-slate-50">
                             <td className="sticky left-0 z-10 bg-white px-3 py-1.5 pl-8">
                               <button onClick={() => toggle(expTickets, setExpTickets, t.node.key)} className="flex items-center gap-1.5 font-medium text-slate-600">
                                 {tOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
@@ -594,10 +604,10 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
                               {matriz.fechas.map((f) => <td key={f} className="px-2 py-1.5 text-center text-[11px]">{cell(leaf.por.get(f))}</td>)}
                             </tr>
                           ))}
-                        </>
+                        </Fragment>
                       )
                     })}
-                  </>
+                  </Fragment>
                 )
               })}
               {matriz.analistas.length === 0 && (
