@@ -67,6 +67,13 @@ const ESTADO_COLORS: Record<string, string> = {
   CANCELADO:            'bg-slate-100 text-slate-400',
 }
 
+// Horas siempre con 2 decimales. Además de uniformar la columna, evita que
+// se filtre el ruido del punto flotante: la suma de la bitácora puede dar
+// 14.620000000000001 y sin formato eso se pinta tal cual en la tabla.
+function fmtHoras(v: number | null | undefined): string {
+  return (v ?? 0).toFixed(2)
+}
+
 function exportToCSV(rows: FlatRow[]) {
   const headers = [
     'Nro. Req','Título','Aplicativo','Tipo','ATI','QA Resp.','QA Apoyo 1','QA Apoyo 2',
@@ -84,7 +91,7 @@ function exportToCSV(rows: FlatRow[]) {
       r.codigo, r.titulo, r.aplicativo, r.tipo, r.ati, r.qa_responsable, r.qa_apoyo_1, r.qa_apoyo_2,
       r.iteracion, r.estado_qa, r.estado_req, r.progreso, r.prioridad, r.avance,
       r.cp_total, r.cp_ok, r.cp_fallo,
-      r.horas_est, r.horas_real, r.avance_hrs,
+      fmtHoras(r.horas_est), fmtHoras(r.horas_real), r.avance_hrs,
       r.def_qa, r.def_uat, r.def_prod,
       r.fecha_asignacion, r.fecha_inicio_planificada, r.fecha_inicio_real,
       r.fecha_entrega_planificada, r.fecha_entrega_real,
@@ -330,8 +337,8 @@ export function ReporteSemanalTable({ requirements, aplicativos }: Props) {
                 <td className="px-3 py-2 text-center">{r.cp_total}</td>
                 <td className="px-3 py-2 text-center text-emerald-600 font-medium">{r.cp_ok}</td>
                 <td className="px-3 py-2 text-center text-red-500 font-medium">{r.cp_fallo}</td>
-                <td className="px-3 py-2 text-center">{r.horas_est}</td>
-                <td className="px-3 py-2 text-center font-medium">{r.horas_real}</td>
+                <td className="px-3 py-2 text-center tabular-nums">{fmtHoras(r.horas_est)}</td>
+                <td className="px-3 py-2 text-center font-medium tabular-nums">{fmtHoras(r.horas_real)}</td>
                 <td className="px-3 py-2 text-center font-medium text-orange-500">{r.avance_hrs}%</td>
                 <td className="px-3 py-2 text-center text-red-400">{r.def_qa}</td>
                 <td className="px-3 py-2 text-center text-orange-400">{r.def_uat}</td>

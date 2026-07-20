@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload } from 'lucide-react'
+import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload, X } from 'lucide-react'
 import { createRegistroDiarioAction, updateRegistroDiarioAction, deleteRegistroDiarioAction } from '@/server/actions/registroDiario'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -70,6 +70,9 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
   )
   const [registros, setRegistros] = useState(initialRegistros)
   const [filtroQaId, setFiltroQaId] = useState('')
+  const [filtroPeriodo, setFiltroPeriodo] = useState('')
+  const [filtroCodigoApp, setFiltroCodigoApp] = useState('')
+  const [filtroTicket, setFiltroTicket] = useState('')
   const [form, setForm] = useState<FormState>({ ...EMPTY, qa_id: currentUserId })
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDelete] = useTransition()
@@ -266,8 +269,43 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
       .sort((a, b) => a.full_name.localeCompare(b.full_name, 'es', { sensitivity: 'base' }))
   }, [registros])
 
-  const registrosFiltrados = filtroQaId ? registros.filter((r) => r.qa_id === filtroQaId) : registros
+  // Los períodos se ordenan cronológicamente (más reciente primero) con la
+  // fecha "from" del catálogo PERIODOS, no alfabéticamente: por nombre
+  // "Abril 2026" saldría antes que "Enero 2026".
+  const periodoOptions = useMemo(() => {
+    const desde = new Map(PERIODOS.map((p) => [p.value, p.from]))
+    return [...new Set(registros.map((r) => r.periodo).filter(Boolean))]
+      .sort((a, b) => (desde.get(b!) ?? b!).localeCompare(desde.get(a!) ?? a!)) as string[]
+  }, [registros])
+
+  const codigoAppOptions = useMemo(() => (
+    [...new Set(registros.map((r) => r.codigo_app).filter(Boolean))]
+      .sort((a, b) => a!.localeCompare(b!, 'es', { sensitivity: 'base' })) as string[]
+  ), [registros])
+
+  const ticketOptions = useMemo(() => (
+    [...new Set(registros.map((r) => r.nro_ticket).filter(Boolean))]
+      .sort((a, b) => b!.localeCompare(a!, 'es', { numeric: true })) as string[]
+  ), [registros])
+
+  const hayFiltros = Boolean(filtroQaId || filtroPeriodo || filtroCodigoApp || filtroTicket)
+
+  const registrosFiltrados = useMemo(() => registros.filter((r) => {
+    if (filtroQaId && r.qa_id !== filtroQaId) return false
+    if (filtroPeriodo && r.periodo !== filtroPeriodo) return false
+    if (filtroCodigoApp && r.codigo_app !== filtroCodigoApp) return false
+    if (filtroTicket && r.nro_ticket !== filtroTicket) return false
+    return true
+  }), [registros, filtroQaId, filtroPeriodo, filtroCodigoApp, filtroTicket])
+
   const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas_ejecutadas, 0)
+
+  function limpiarFiltros() {
+    setFiltroQaId('')
+    setFiltroPeriodo('')
+    setFiltroCodigoApp('')
+    setFiltroTicket('')
+  }
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -277,13 +315,40 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
             <h1 className="text-2xl font-bold tracking-tight">Actividades — Registro Diario</h1>
             <p className="text-muted-foreground text-sm mt-1">Bitácora de actividades del equipo QA</p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-52">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="w-44">
               <Select value={filtroQaId} onChange={(e) => setFiltroQaId(e.target.value)}>
                 <option value="">Todos los QA</option>
                 {qaOptions.map((q) => <option key={q.id} value={q.id}>{q.full_name}</option>)}
               </Select>
             </div>
+            <div className="w-40">
+              <Select value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value)}>
+                <option value="">Todos los períodos</option>
+                {periodoOptions.map((p) => <option key={p} value={p}>{p}</option>)}
+              </Select>
+            </div>
+            <div className="w-36">
+              <Select value={filtroCodigoApp} onChange={(e) => setFiltroCodigoApp(e.target.value)}>
+                <option value="">Todos los códigos</option>
+                {codigoAppOptions.map((c) => <option key={c} value={c}>{c}</option>)}
+              </Select>
+            </div>
+            <div className="w-32">
+              <Select value={filtroTicket} onChange={(e) => setFiltroTicket(e.target.value)}>
+                <option value="">Todos los tickets</option>
+                {ticketOptions.map((t) => <option key={t} value={t}>{t}</option>)}
+              </Select>
+            </div>
+            {hayFiltros && (
+              <button
+                onClick={limpiarFiltros}
+                title="Quitar todos los filtros"
+                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
+              >
+                <X className="h-3.5 w-3.5" />Limpiar
+              </button>
+            )}
             {isSupervisor && (
               <button
                 onClick={() => setImportOpen(true)}
@@ -374,11 +439,16 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
               <ClipboardList className="h-8 w-8 text-slate-300" />
             </div>
             <p className="text-sm font-semibold text-slate-500">
-              {filtroQaId ? 'Sin actividades para este QA' : 'Sin actividades registradas'}
+              {hayFiltros ? 'Sin actividades para estos filtros' : 'Sin actividades registradas'}
             </p>
             <p className="mt-1 text-xs text-slate-400">
-              {filtroQaId ? 'Prueba con otro QA o quita el filtro.' : 'Usa el formulario de arriba para agregar tu primera actividad.'}
+              {hayFiltros ? 'Prueba con otra combinación o limpia los filtros.' : 'Usa el formulario de arriba para agregar tu primera actividad.'}
             </p>
+            {hayFiltros && (
+              <button onClick={limpiarFiltros} className="mt-3 text-xs font-medium text-[#0184EF] hover:underline">
+                Limpiar filtros
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex-1 min-h-0 rounded-xl border border-slate-200 bg-white shadow-sm overflow-x-auto overflow-y-auto">
