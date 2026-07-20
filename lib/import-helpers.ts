@@ -1,6 +1,29 @@
 // Helpers compartidos para los importadores de Excel/CSV
 // (Actividades → registro_diario, Requerimientos → requirements).
 
+// Normaliza un encabezado del Excel antes de buscarlo en el HEADER_MAP de
+// cada importador. Hace dos cosas, y las dos importan:
+//
+//   · Colapsa espacios (dobles, saltos de línea, y el espacio duro NBSP que
+//     aparece al copiar/pegar cabeceras entre hojas de Excel).
+//   · Quita las tildes, para que "Período" encuentre la clave 'periodo'.
+//
+// IMPORTANTE: por lo anterior, las claves de los HEADER_MAP deben escribirse
+// SIEMPRE en minúsculas y SIN TILDES. Una clave acentuada nunca matchea,
+// porque el encabezado llega aquí ya sin acentos.
+//
+// Vivió duplicada en los dos diálogos de importación y las copias se
+// desincronizaron: a una le faltaba quitar tildes (se descartaban todas las
+// filas cuando el encabezado decía "Período") y a la otra colapsar espacios.
+export function normalizeHeader(h: string): string {
+  return h
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export function resolveEnumValue(
   value: string | undefined,
   labels: Record<string, string>

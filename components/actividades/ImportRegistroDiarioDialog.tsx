@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { bulkImportRegistroDiarioAction } from '@/server/actions/registroDiario'
 import type { ImportRow } from '@/server/actions/registroDiario'
 import type { Profile } from '@/types/domain.types'
+import { normalizeHeader } from '@/lib/import-helpers'
 
 function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
@@ -26,14 +27,13 @@ function Select({ children, ...props }: React.SelectHTMLAttributes<HTMLSelectEle
 }
 
 // Mapea distintos encabezados posibles (Excel del equipo) a nuestras claves internas.
+// Las claves van en minúsculas y SIN TILDES: normalizeHeader se las quita al
+// encabezado antes de buscar, así que una clave acentuada nunca matchearía.
 const HEADER_MAP: Record<string, keyof ImportRow> = {
   'periodo': 'periodo',
   'iteracion': 'iteracion',
-  'iteración': 'iteracion',
   'aplicacion': 'aplicativo',
-  'aplicación': 'aplicativo',
   'codigo app': 'codigo_app',
-  'código app': 'codigo_app',
   'tipo de solicitud': 'tipo_solicitud',
   'tipo solicitud': 'tipo_solicitud',
   'tipo de tarea': 'tipo_tarea',
@@ -46,13 +46,6 @@ const HEADER_MAP: Record<string, keyof ImportRow> = {
   'fecha de reporte': 'fecha_reporte',
   'fecha reporte': 'fecha_reporte',
   'observaciones': 'observaciones',
-}
-
-function normalizeHeader(h: string): string {
-  // Se quitan las tildes antes de buscar en HEADER_MAP. El formato que descarga
-  // la app trae "Período" acentuado y el mapa solo tenía la clave "periodo", así
-  // que no se reconocía la columna y se descartaban TODAS las filas.
-  return h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
 interface ImportRegistroDiarioDialogProps {

@@ -10,15 +10,18 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { bulkImportRequirementsAction } from '@/server/actions/requirements'
 import type { RequirementImportRow, OmittedRow } from '@/server/actions/requirements'
+import { normalizeHeader } from '@/lib/import-helpers'
 
 // Mapea los encabezados reales del Excel del equipo a nuestras claves internas.
+// Las claves van en minúsculas y SIN TILDES: normalizeHeader se las quita al
+// encabezado antes de buscar, así que una clave acentuada nunca matchearía.
 const HEADER_MAP: Record<string, keyof RequirementImportRow> = {
   // Nro. Req
   'nro. req': 'nro_req', 'nro req': 'nro_req', 'nro.req': 'nro_req',
   // Título
-  'título': 'titulo', 'titulo': 'titulo', 'title': 'titulo',
+  'titulo': 'titulo', 'title': 'titulo',
   // Descripción
-  'descripción': 'descripcion', 'descripcion': 'descripcion',
+  'descripcion': 'descripcion',
   // ATI
   'ati': 'ati_responsable', 'ati responsable': 'ati_responsable', 'responsable ati': 'ati_responsable',
   // Tipo
@@ -27,19 +30,19 @@ const HEADER_MAP: Record<string, keyof RequirementImportRow> = {
   'prioridad': 'prioridad',
   // Fechas
   'f. asig.': 'fecha_asignacion', 'f.asig.': 'fecha_asignacion',
-  'fecha asignación': 'fecha_asignacion', 'fecha asignacion': 'fecha_asignacion',
+  'fecha asignacion': 'fecha_asignacion',
   'f. ent. est.': 'fecha_entrega_estimacion', 'f.ent.est.': 'fecha_entrega_estimacion',
-  'fecha entrega estimación': 'fecha_entrega_estimacion', 'fecha entrega estimacion': 'fecha_entrega_estimacion',
+  'fecha entrega estimacion': 'fecha_entrega_estimacion',
   'f. apr. est.': 'fecha_aprobacion_estimacion', 'f.apr.est.': 'fecha_aprobacion_estimacion',
-  'fecha aprobación estimación': 'fecha_aprobacion_estimacion', 'fecha aprobacion estimacion': 'fecha_aprobacion_estimacion',
+  'fecha aprobacion estimacion': 'fecha_aprobacion_estimacion',
   'f. ent. plan.': 'fecha_entrega_planificada', 'f.ent.plan.': 'fecha_entrega_planificada',
   'fecha de entrega planificada': 'fecha_entrega_planificada', 'fecha entrega planificada': 'fecha_entrega_planificada',
   'f. ent. real': 'fecha_entrega_real', 'f.ent.real': 'fecha_entrega_real',
   'fecha de entrega real': 'fecha_entrega_real', 'fecha entrega real': 'fecha_entrega_real',
   'f. ini. plan.': 'fecha_inicio_planificada', 'f.ini.plan.': 'fecha_inicio_planificada',
-  'fecha inicio atención planificada': 'fecha_inicio_planificada', 'fecha inicio atencion planificada': 'fecha_inicio_planificada',
+  'fecha inicio atencion planificada': 'fecha_inicio_planificada',
   'f. ini. real': 'fecha_inicio_real', 'f.ini.real': 'fecha_inicio_real',
-  'fecha inicio atención real': 'fecha_inicio_real', 'fecha inicio atencion real': 'fecha_inicio_real',
+  'fecha inicio atencion real': 'fecha_inicio_real',
   // Aplicativo
   'aplicativo': 'aplicativo',
   // QA
@@ -53,7 +56,7 @@ const HEADER_MAP: Record<string, keyof RequirementImportRow> = {
   'estado qa': 'estado_qa',
   'estado req.': 'estado_req', 'estado req': 'estado_req', 'estado del req': 'estado_req',
   // Iter
-  'iter': 'iteracion', 'iter.': 'iteracion', 'iteración': 'iteracion', 'iteracion': 'iteracion',
+  'iter': 'iteracion', 'iter.': 'iteracion', 'iteracion': 'iteracion',
   // CP
   'cp tot.': 'cp_total', 'cp total': 'cp_total', 'cp tot': 'cp_total',
   'cp ok': 'cp_ok',
@@ -65,16 +68,12 @@ const HEADER_MAP: Record<string, keyof RequirementImportRow> = {
   'def. qa': 'defectos_qa', 'def.qa': 'defectos_qa', 'defectos en qa': 'defectos_qa',
   'def. uat': 'defectos_uat', 'def.uat': 'defectos_uat', 'defectos en uat': 'defectos_uat',
   'def. prod.': 'defectos_produccion', 'def.prod.': 'defectos_produccion',
-  'defectos en producción': 'defectos_produccion', 'defectos en produccion': 'defectos_produccion',
+  'defectos en produccion': 'defectos_produccion',
   // Evidencias y observaciones
-  'evidencias': 'rutas_evidencias', 'rutas de estimación y evidencias de pruebas': 'rutas_evidencias',
+  'evidencias': 'rutas_evidencias',
   'rutas de estimacion y evidencias de pruebas': 'rutas_evidencias',
   'observaciones': 'observaciones_estado', 'observaciones estado tck': 'observaciones_estado',
   'observaciones estado': 'observaciones_estado',
-}
-
-function normalizeHeader(h: string): string {
-  return h.replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
 const PREVIEW_COLUMNS: { key: keyof RequirementImportRow; label: string }[] = [
