@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, Upload, FileSpreadsheet, X } from 'lucide-react'
+import { ChevronDown, Upload, FileSpreadsheet, X, Download } from 'lucide-react'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
@@ -140,6 +140,31 @@ export function ImportRegistroDiarioDialog({
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  // Genera y descarga la plantilla (.xlsx) con la hoja "Data", las cabeceras
+  // que reconoce el importador y una fila de ejemplo para guiar el llenado.
+  async function handleDownloadTemplate() {
+    try {
+      const XLSX = await import('xlsx')
+      const headers = [
+        'Período', 'Iteración', 'Aplicación', 'Código App', 'Tipo de Solicitud',
+        'Tipo de Tarea', 'Horas Ejecutadas', 'Perfil', 'Nro de Ticket', 'Fecha de Reporte', 'Observaciones',
+      ]
+      // La iteración va atada al período (ver PERIODOS en lib/constants):
+      // Julio 2025 → iteración 6.
+      const ejemplo = [
+        'Julio 2025', 6, 'SFC', 'SFC', '[PRY] Requerimientos',
+        '[GSTI] Ejecución de Pruebas', 8, 'EP11', '19535', '2025-07-15', 'Fila de ejemplo — reemplázala',
+      ]
+      const ws = XLSX.utils.aoa_to_sheet([headers, ejemplo])
+      ws['!cols'] = headers.map(() => ({ wch: 20 }))
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Data')
+      XLSX.writeFile(wb, 'matriz_carga_registro_horas.xlsx')
+    } catch {
+      toast.error('No se pudo generar la plantilla.')
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl min-w-0">
@@ -148,6 +173,14 @@ export function ImportRegistroDiarioDialog({
           <p className="text-xs text-muted-foreground">
             Columnas esperadas: Período, Iteración, Aplicación, Código App, Tipo de Solicitud, Tipo de Tarea, Horas Ejecutadas, Perfil, Nro de Ticket, Fecha de Reporte, Observaciones.
           </p>
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-[#0184EF] transition-colors hover:bg-blue-50"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Descargar formato (matriz de carga)
+          </button>
         </DialogHeader>
 
         <div className="space-y-4 min-w-0">
