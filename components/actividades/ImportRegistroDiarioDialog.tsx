@@ -49,7 +49,10 @@ const HEADER_MAP: Record<string, keyof ImportRow> = {
 }
 
 function normalizeHeader(h: string): string {
-  return h.trim().toLowerCase()
+  // Se quitan las tildes antes de buscar en HEADER_MAP. El formato que descarga
+  // la app trae "Período" acentuado y el mapa solo tenía la clave "periodo", así
+  // que no se reconocía la columna y se descartaban TODAS las filas.
+  return h.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
 interface ImportRegistroDiarioDialogProps {
