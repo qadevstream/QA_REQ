@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload, X, Download } from 'lucide-react'
+import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload, X, Download, Search } from 'lucide-react'
 import { createRegistroDiarioAction, updateRegistroDiarioAction, deleteRegistroDiarioAction } from '@/server/actions/registroDiario'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,6 +45,61 @@ function Input({ className = '', ...props }: React.InputHTMLAttributes<HTMLInput
   )
 }
 
+// Filtro tipo combobox: input con lupa + dropdown propio de altura limitada
+// (no datalist nativo, cuya altura no se puede controlar por CSS). Filtra las
+// sugerencias por lo que se escribe. `match` decide cómo compara la tabla.
+function SearchCombo({ value, onChange, options, placeholder, widthClass = 'w-40' }: {
+  value: string
+  onChange: (v: string) => void
+  options: string[]
+  placeholder: string
+  widthClass?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const sugeridos = useMemo(() => {
+    const q = value.trim().toLowerCase()
+    return q ? options.filter((o) => o.toLowerCase().includes(q)) : options
+  }, [options, value])
+
+  return (
+    <div className={`relative ${widthClass}`}>
+      <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+      <input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        placeholder={placeholder}
+        className="w-full rounded-md border border-slate-200 bg-white pl-7 pr-6 py-2 text-xs outline-none transition-all focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 placeholder:text-slate-400"
+      />
+      {value && (
+        <button
+          onMouseDown={(e) => { e.preventDefault(); onChange('') }}
+          title="Limpiar"
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {open && sugeridos.length > 0 && (
+        <ul className="absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg">
+          {sugeridos.map((o) => (
+            <li key={o}>
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); onChange(o); setOpen(false) }}
+                className={`block w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 ${o === value ? 'font-semibold text-blue-600' : 'text-slate-600'}`}
+              >
+                {o}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 const EMPTY = {
   periodo: '', iteracion: '1', aplicativo: '', codigo_app: '', tipo_solicitud: '',
   tipo_tarea: '', qa_id: '', horas_ejecutadas: '', perfil: 'EP11', nro_ticket: '',
@@ -73,6 +128,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
   const [filtroPeriodo, setFiltroPeriodo] = useState('')
   const [filtroCodigoApp, setFiltroCodigoApp] = useState('')
   const [filtroTicket, setFiltroTicket] = useState('')
+  const [filtroIter, setFiltroIter] = useState('')
   const [form, setForm] = useState<FormState>({ ...EMPTY, qa_id: currentUserId })
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDelete] = useTransition()
@@ -288,15 +344,32 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
       .sort((a, b) => b!.localeCompare(a!, 'es', { numeric: true })) as string[]
   ), [registros])
 
-  const hayFiltros = Boolean(filtroQaId || filtroPeriodo || filtroCodigoApp || filtroTicket)
-
-  const registrosFiltrados = useMemo(() => registros.filter((r) => {
+  // Filas que pasan TODOS los filtros MENOS el de iteración. Sirve para dos
+  // cosas: aplicar encima el filtro ITER., y calcular sus opciones de forma
+  // facetada — que solo liste las iteraciones presentes en lo ya filtrado
+  // (al filtrar un ticket, únicamente las iteraciones de ese ticket).
+  const rowsSinFiltroIter = useMemo(() => registros.filter((r) => {
     if (filtroQaId && r.qa_id !== filtroQaId) return false
     if (filtroPeriodo && r.periodo !== filtroPeriodo) return false
     if (filtroCodigoApp && r.codigo_app !== filtroCodigoApp) return false
-    if (filtroTicket && r.nro_ticket !== filtroTicket) return false
+    if (filtroTicket && !(r.nro_ticket ?? '').toLowerCase().includes(filtroTicket.trim().toLowerCase())) return false
     return true
   }), [registros, filtroQaId, filtroPeriodo, filtroCodigoApp, filtroTicket])
+
+  const iterOptions = useMemo(() => (
+    [...new Set(rowsSinFiltroIter.map((r) => r.iteracion).filter((v) => v != null))]
+      .sort((a, b) => (a as number) - (b as number))
+      .map((v) => String(v))
+  ), [rowsSinFiltroIter])
+
+  const hayFiltros = Boolean(filtroQaId || filtroPeriodo || filtroCodigoApp || filtroTicket || filtroIter)
+
+  const registrosFiltrados = useMemo(
+    () => filtroIter
+      ? rowsSinFiltroIter.filter((r) => String(r.iteracion ?? '') === filtroIter.trim())
+      : rowsSinFiltroIter,
+    [rowsSinFiltroIter, filtroIter],
+  )
 
   const totalHoras = registrosFiltrados.reduce((sum, r) => sum + r.horas_ejecutadas, 0)
 
@@ -305,6 +378,7 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     setFiltroPeriodo('')
     setFiltroCodigoApp('')
     setFiltroTicket('')
+    setFiltroIter('')
   }
 
   const [isExporting, setIsExporting] = useState(false)
@@ -428,12 +502,8 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                 {codigoAppOptions.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
             </div>
-            <div className="w-32">
-              <Select value={filtroTicket} onChange={(e) => setFiltroTicket(e.target.value)}>
-                <option value="">Todos los tickets</option>
-                {ticketOptions.map((t) => <option key={t} value={t}>{t}</option>)}
-              </Select>
-            </div>
+            <SearchCombo value={filtroIter} onChange={setFiltroIter} options={iterOptions} placeholder="Iter…" widthClass="w-24" />
+            <SearchCombo value={filtroTicket} onChange={setFiltroTicket} options={ticketOptions} placeholder="Buscar ticket…" widthClass="w-40" />
             {hayFiltros && (
               <button
                 onClick={limpiarFiltros}
