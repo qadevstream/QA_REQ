@@ -104,10 +104,18 @@ export async function bulkImportRegistroDiarioAction(
       continue
     }
 
+    // Resolver el aplicativo priorizando la columna "Código App" (trae el
+    // código exacto del catálogo, p.ej. SFC) y cayendo al nombre solo si el
+    // código no matchea. Así un nombre con etiquetas ("[NO SAP] Fondo Crecer")
+    // no resuelve al aplicativo equivocado.
+    const aplicativoResuelto =
+      resolveAplicativoByCodigo(row.codigo_app, catalogoAplicativos) ??
+      resolveAplicativoByCodigo(row.aplicativo, catalogoAplicativos)
+
     toInsert.push({
       periodo,
       iteracion: row.iteracion ? Number(row.iteracion) : undefined,
-      aplicativo: resolveAplicativoByCodigo(row.aplicativo, catalogoAplicativos),
+      aplicativo: aplicativoResuelto,
       codigo_app: row.codigo_app?.trim() || undefined,
       tipo_solicitud: resolveEnumValue(row.tipo_solicitud, TIPO_REQUERIMIENTO_LABELS) as CreateRegistroDiarioInput['tipo_solicitud'],
       tipo_tarea: row.tipo_tarea?.trim() || undefined,
