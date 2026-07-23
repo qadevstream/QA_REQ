@@ -168,9 +168,18 @@ function LineRealMeta({ dias, meta }: { dias: { fecha: string; horas: number }[]
   const n = dias.length
   // El ancho crece con los puntos para que las etiquetas de horas nunca se
   // encimen (~34 px por punto). El contenedor tiene scroll horizontal.
-  const W = Math.max(560, n * 34), H = 190, pad = 28
+  // El ancho mínimo del viewBox se mantiene cerca del ancho real del contenedor
+  // (~1000) para que, con pocos puntos, el SVG no se estire y agrande el texto y
+  // los puntos. Con muchos días crece a 34px por punto (y aparece scroll).
+  const W = Math.max(1000, n * 34), H = 190, pad = 28
   const padTop = 34   // aire extra arriba para la etiqueta del punto más alto
-  const maxY = Math.max(meta, ...dias.map((d) => d.horas), 1) * 1.15
+  const dataMax = Math.max(...dias.map((d) => d.horas), 0)
+  // Escala ANCLADA a la meta: el eje NO se reescala con las fluctuaciones
+  // diarias normales (solo crece si algún día supera la meta+15%). Antes se
+  // anclaba al máximo del día × 1.15, así que al ingresar más horas la serie
+  // entera se comprimía contra el techo. El padTop reserva el aire de la
+  // etiqueta del punto más alto, por lo que no se recorta nada.
+  const maxY = Math.max(meta * 1.15, dataMax, 1)
   const x = (i: number) => pad + (n <= 1 ? 0 : (i * (W - pad * 2)) / (n - 1))
   const y = (v: number) => H - pad - (v / maxY) * (H - pad - padTop)
   const pts = dias.map((d, i) => ({ x: x(i), y: y(d.horas) }))
@@ -636,12 +645,13 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
           <table className="w-full min-w-[640px] text-xs">
             <thead>
               <tr className="text-[10px] uppercase tracking-wide text-white">
-                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Fecha</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Fecha registro</th>
                 <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Analista</th>
                 <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Aplicación</th>
                 <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Solicitud</th>
                 <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-center">Horas</th>
                 <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-center">Ticket</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-center">Iter.</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -658,9 +668,10 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700">{fmtH(r.horas_ejecutadas)} h</span>
                   </td>
                   <td className="px-3 py-2 text-center font-mono text-[11px] text-slate-500">{r.nro_ticket ?? '—'}</td>
+                  <td className="px-3 py-2 text-center text-slate-600">{r.iteracion ?? '—'}</td>
                 </tr>
               ))}
-              {detalle.length === 0 && <tr><td colSpan={6} className="py-6 text-center text-slate-400">Sin registros</td></tr>}
+              {detalle.length === 0 && <tr><td colSpan={7} className="py-6 text-center text-slate-400">Sin registros</td></tr>}
             </tbody>
           </table>
         </div>
