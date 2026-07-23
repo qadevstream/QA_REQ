@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload, X } from 'lucide-react'
+import { Plus, Trash2, Pencil, ChevronDown, ClipboardList, Upload, X, Download } from 'lucide-react'
 import { createRegistroDiarioAction, updateRegistroDiarioAction, deleteRegistroDiarioAction } from '@/server/actions/registroDiario'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -307,6 +307,100 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
     setFiltroTicket('')
   }
 
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Exporta TODOS los registros de TODOS los analistas a un Excel (.xlsx),
+  // sin importar los filtros activos en pantalla. Cabecera con estilo,
+  // autofiltro y fila de total de horas. Solo Supervisor/Administrador.
+  //
+  // Usa xlsx-js-style (no 'xlsx') porque SheetJS Community descarta los
+  // estilos de celda al escribir; el fork sí los emite. Misma API.
+  async function handleExport() {
+    if (registros.length === 0) { toast.error('No hay registros para exportar.'); return }
+    setIsExporting(true)
+    try {
+      const XLSX = await import('xlsx-js-style')
+
+      const headers = [
+        'Período', 'Iteración', 'Aplicación', 'Código App', 'Tipo de Solicitud',
+        'Tipo de Tarea', 'Nombre QA', 'Horas Ejecutadas', 'Perfil', 'Nro de Ticket',
+        'Fecha de Reporte', 'Observaciones',
+      ]
+
+      // Orden: por analista (A-Z) y, dentro de cada uno, por fecha desc.
+      const ordenados = [...registros].sort((a, b) =>
+        (a.qa?.full_name ?? '').localeCompare(b.qa?.full_name ?? '', 'es', { sensitivity: 'base' }) ||
+        b.fecha_reporte.localeCompare(a.fecha_reporte)
+      )
+
+      const body = ordenados.map((r) => [
+        r.periodo ?? '',
+        r.iteracion ?? '',
+        apLabelShort(r.aplicativo, aplicativos),
+        r.codigo_app ?? '',
+        r.tipo_solicitud ? TIPO_REQUERIMIENTO_LABELS[r.tipo_solicitud] : '',
+        r.tipo_tarea ?? '',
+        r.qa?.full_name ?? '',
+        r.horas_ejecutadas,
+        r.perfil ?? '',
+        r.nro_ticket ?? '',
+        r.fecha_reporte ?? '',
+        r.observaciones ?? '',
+      ])
+
+      const totalHorasExport = ordenados.reduce((s, r) => s + r.horas_ejecutadas, 0)
+      const totalRow: (string | number)[] = ['', '', '', '', '', '', 'TOTAL', Number(totalHorasExport.toFixed(2)), '', '', '', '']
+
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...body, totalRow])
+
+      const headerStyle = {
+        fill: { patternType: 'solid', fgColor: { rgb: '1F3864' } },
+        font: { color: { rgb: 'FFFFFF' }, bold: true, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+        border: { bottom: { style: 'thin', color: { rgb: '1F3864' } } },
+      }
+      const bodyStyle = { alignment: { horizontal: 'center', vertical: 'center' } }
+      const leftStyle = { alignment: { horizontal: 'left', vertical: 'center' } }
+      const totalStyle = {
+        fill: { patternType: 'solid', fgColor: { rgb: 'DCE6F1' } },
+        font: { bold: true, sz: 11 },
+        alignment: { horizontal: 'center', vertical: 'center' },
+      }
+
+      const range = XLSX.utils.decode_range(ws['!ref']!)
+      const lastRow = range.e.r                 // fila del total
+      const leftCols = new Set([2, 11])          // Aplicación y Observaciones alineadas a la izquierda
+      for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })]
+          if (!cell) continue
+          if (R === 0) cell.s = headerStyle
+          else if (R === lastRow) cell.s = totalStyle
+          else cell.s = leftCols.has(C) ? leftStyle : bodyStyle
+        }
+      }
+
+      ws['!cols'] = [
+        { wch: 16 }, { wch: 9 }, { wch: 26 }, { wch: 12 }, { wch: 20 },
+        { wch: 24 }, { wch: 22 }, { wch: 14 }, { wch: 8 }, { wch: 12 },
+        { wch: 14 }, { wch: 40 },
+      ]
+      ws['!rows'] = [{ hpt: 26 }]
+      // Autofiltro sobre las cabeceras (excluye la fila de total).
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: lastRow - 1, c: range.e.c } }) }
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Registro de Actividades')
+      const hoy = new Date().toISOString().slice(0, 10)
+      XLSX.writeFile(wb, `registro_actividades_qa_${hoy}.xlsx`)
+      toast.success(`Exportados ${ordenados.length} registros.`)
+    } catch {
+      toast.error('No se pudo generar el Excel.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -347,6 +441,16 @@ export function RegistroDiarioManager({ initialRegistros, analistas, aplicativos
                 className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-50 hover:text-slate-700"
               >
                 <X className="h-3.5 w-3.5" />Limpiar
+              </button>
+            )}
+            {isSupervisor && (
+              <button
+                onClick={handleExport}
+                disabled={isExporting}
+                title="Exportar todos los registros de todos los analistas"
+                className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors disabled:opacity-60"
+              >
+                <Download className="h-3.5 w-3.5" />{isExporting ? 'Exportando…' : 'Exportar Excel'}
               </button>
             )}
             {isSupervisor && (
