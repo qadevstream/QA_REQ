@@ -185,6 +185,16 @@ export async function addIterationAction(
       session.userId
     )
 
+    // La nueva iteración nace con H. Real = 0. El trigger de sincronización solo
+    // reacciona a cambios en registro_diario, no a la creación de iteraciones,
+    // así que si la bitácora YA tenía horas para (ticket, nextIter) —registradas
+    // antes de que existiera la iteración— hay que sumarlas ahora. Sin esto, esas
+    // horas quedaban huérfanas y no aparecían en el H. Real de Reportes.
+    if (reqData?.codigo_requerimiento) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.rpc as any)('sync_horas_reales', { p_nro_ticket: reqData.codigo_requerimiento })
+    }
+
     // Crear actividad en el planner para esta nueva iteración
     if (reqData) {
       await createActividad({
