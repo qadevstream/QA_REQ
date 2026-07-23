@@ -387,8 +387,7 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
 
   const detalle = useMemo(
     () => [...rows]
-      .sort((a, b) => b.fecha_reporte.localeCompare(a.fecha_reporte) || b.horas_ejecutadas - a.horas_ejecutadas)
-      .slice(0, 10),
+      .sort((a, b) => b.fecha_reporte.localeCompare(a.fecha_reporte) || b.horas_ejecutadas - a.horas_ejecutadas),
     [rows],
   )
 
@@ -628,17 +627,21 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
       </PanelCard>
 
       {/* ═══ Detalle de registros ═══ */}
-      <PanelCard title="Detalle de registros" subtitle="Últimos 10 registros (fecha descendente)" icon={ClipboardList}>
-        <div className="overflow-x-auto">
+      <PanelCard
+        title="Detalle de registros"
+        subtitle={`${detalle.length} ${detalle.length === 1 ? 'registro' : 'registros'} del periodo (fecha descendente)`}
+        icon={ClipboardList}
+      >
+        <div className="max-h-[420px] overflow-y-auto overflow-x-auto">
           <table className="w-full min-w-[640px] text-xs">
             <thead>
-              <tr className="bg-[#003087] text-[10px] uppercase tracking-wide text-white">
-                <th className="px-3 py-2 text-left">Fecha</th>
-                <th className="px-3 py-2 text-left">Analista</th>
-                <th className="px-3 py-2 text-left">Aplicación</th>
-                <th className="px-3 py-2 text-left">Solicitud</th>
-                <th className="px-3 py-2 text-center">Horas</th>
-                <th className="px-3 py-2 text-center">Ticket</th>
+              <tr className="text-[10px] uppercase tracking-wide text-white">
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Fecha</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Analista</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Aplicación</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-left">Solicitud</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-center">Horas</th>
+                <th className="sticky top-0 z-10 bg-[#003087] px-3 py-2 text-center">Ticket</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -661,7 +664,9 @@ export function ControlHorasDashboard({ registros, analistas, aplicativos, feria
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">Visualización limitada a los 10 registros más recientes</p>
+        {detalle.length > 10 && (
+          <p className="mt-2 text-[11px] text-slate-400">Desplázate dentro de la tabla para ver los {detalle.length} registros</p>
+        )}
       </PanelCard>
     </div>
   )
