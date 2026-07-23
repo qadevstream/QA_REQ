@@ -13,8 +13,6 @@ function isAuthenticated(request: NextRequest): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const cookies = request.cookies.getAll()
-  console.log('[MW]', pathname, '| cookies:', cookies.map(c => c.name).join(', ') || '(none)')
 
   // Rutas públicas de autenticación (login + recuperación de contraseña)
   if (
